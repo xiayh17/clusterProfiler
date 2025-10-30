@@ -13,12 +13,12 @@ Authors@R: c(
 	)
 Maintainer: Guangchuang Yu <guangchuangyu@gmail.com>
 Description: This package supports functional characteristics of both coding and non-coding genomics data for thousands of species with up-to-date gene annotation. 
-    It provides a univeral interface for gene functional annotation from a variety of sources and thus can be applied in diverse scenarios. 
+    It provides a universal interface for gene functional annotation from a variety of sources and thus can be applied in diverse scenarios. 
     It provides a tidy interface to access, manipulate, and visualize enrichment results to help users achieve efficient data interpretation. 
     Datasets obtained from multiple treatments and time points can be analyzed and compared in a single run, easily revealing functional consensus 
-    and differences among distinct conditions.
+    and differences among distinct gene clusters.
 Depends:
-    R (>= 3.5.0)
+    R (>= 4.2.0)
 Imports:
     AnnotationDbi,
     DOSE (>= 3.23.2),
@@ -57,4 +57,4 @@ Packaged: NA
 biocViews: Annotation, Clustering, GeneSetEnrichment, GO, KEGG,
     MultipleComparison, Pathways, Reactome, Visualization
 Encoding: UTF-8
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
