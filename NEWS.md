@@ -1,6 +1,3 @@
-# clusterProfiler 4.16.0
-
-+ Bioconductor RELEASE_3_21 (2025-04-17, Thu)
 
 <!--
 
@@ -13,6 +10,20 @@ TODO:
   - e.g. independent test of cancer sample 1 vs control 1 and cancer sample 2 vs control 2, then combine results
   - e.g. independent test for different omics data and then combine results
 -->
+
+# clusterProfiler 4.19.1
+
++ bug fixed in `enrichPC` (2025-11-01, Sat, #789) 
+
+# clusterProfiler 4.18.0
+
++ Bioconductor RELEASE_3_22 (2025-10-30, Thu)
+
+
+# clusterProfiler 4.16.0
+
++ Bioconductor RELEASE_3_21 (2025-04-17, Thu)
+
 
 # clusterProfiler 4.15.2
 
