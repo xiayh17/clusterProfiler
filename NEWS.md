@@ -11,6 +11,12 @@ TODO:
   - e.g. independent test for different omics data and then combine results
 -->
 
+# clusterProfiler 4.19.2
+
++ update KEGG cache data (2025-11-20, Thu)
+  - number of KEGG pathway with category information: 582
+  - Number of species: 11344
+
 # clusterProfiler 4.19.1
 
 + bug fixed in `enrichPC` (2025-11-01, Sat, #789) 
