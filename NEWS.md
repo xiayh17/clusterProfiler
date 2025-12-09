@@ -13,6 +13,7 @@ TODO:
 
 # clusterProfiler 4.19.2.001
 
++ add github action to automatically update KEGG cache data (2025-12-09, Tue)
 + use 'enrichit' as engine for enrichment analysis (2025-12-07, Sun)
 
 # clusterProfiler 4.19.2
