@@ -37,19 +37,7 @@ term <- lapply(keggmap, function(x) {
     name <- sub("^\\d{5}", "", y)
     name <- sub("Including:.*$", "", name)
     d <- data.frame(id = id, name = name)
-
-    # ii <- grep("Including:", name)
-    # if (length(ii) > 0) {
-    #    for (i in ii) {
-    #        tmp <- unlist(strsplit(name[i], split="Including: "))
-    #        d$name[i] <- tmp[1]
-    #        d2 <- data.frame(
-    #            id = id[i],
-    #            name = unlist(strsplit(tmp[2], split=", "))
-    #        )
-    #        d <- rbind(d, d2)
-    #    }    
-    #}
+    
     return(d)
 })
 

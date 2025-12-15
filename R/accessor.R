@@ -58,9 +58,7 @@ dim.compareClusterResult <- function(x) {
     dim(as.data.frame(x))
 }
 
-
 #' @method geneID groupGOResult
-#' @importFrom enrichit geneID
 #' @export
 geneID.groupGOResult <- function(x) as.character(x@result$geneID)
 
