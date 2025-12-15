@@ -33,6 +33,9 @@ jobs:
             any::tibble
             any::tidyr
             any::devtools
+            YuLab-SMU/yulab.utils
+            YuLab-SMU/enrichit
+            YuLab-SMU/DOSE
             local::.
           needs: check
 
