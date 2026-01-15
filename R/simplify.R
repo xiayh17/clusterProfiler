@@ -69,10 +69,11 @@ setMethod("simplify", signature(x="gseaResult"),
 simplify_internal <- function(res, cutoff=0.7, by="p.adjust", select_fun=min, 
                               measure="Rel", ontology, semData) {
     if (missing(semData) || is.null(semData)) {
+        yulab.utils::yulab_warn("semData is not provided. It will be calculated automatically.")
         if (measure == "Wang") {
             semData <- godata(ont = ontology)
         } else {
-            stop("godata should be provided for IC-based methods...")
+            semData <- godata(ont = ontology, computeIC = TRUE)
         }
     } else {
         if (ontology != semData@ont) {
@@ -123,7 +124,7 @@ simplify_internal <- function(res, cutoff=0.7, by="p.adjust", select_fun=min,
 
 
         ## sim.df <- sim.df[-ii[-jj]]
-        GO_to_remove <- c(GO_to_remove, sim_subset$go1[-jj]) %>% unique
+        GO_to_remove <- unique(c(GO_to_remove, sim_subset$go1[-jj]))
     }
 
     res[!res$ID %in% GO_to_remove, ]
