@@ -31,31 +31,50 @@ interpret_agent <- function(x, context = NULL, n_pathways = 50, model = "deepsee
     
     # Process each cluster with the multi-agent pipeline
     results <- lapply(names(res_list), function(name) {
-        df <- res_list[[name]]
-        if (nrow(df) == 0) return(NULL)
+        item <- res_list[[name]]
+        df <- item$df
+        original_genes <- item$genes
         
-        message(sprintf("Processing cluster '%s' with Agent 1: The Cleaner...", name))
+        # Check for fallback mode
+        fallback_mode <- FALSE
+        pathway_text <- ""
         
-        # Format initial pathways for Agent 1
-        cols_to_keep <- intersect(c("ID", "Description", "GeneRatio", "NES", "p.adjust", "pvalue", "geneID"), names(df))
-        pathway_text <- paste(
-            apply(df[, cols_to_keep, drop=FALSE], 1, function(row) {
-                paste(names(row), row, sep=": ", collapse=", ")
-            }),
-            collapse="\n"
-        )
+        if (nrow(df) == 0) {
+            if (!is.null(original_genes) && length(original_genes) > 0) {
+                 fallback_mode <- TRUE
+                 warning(sprintf("Cluster '%s': No enriched pathways. Falling back to gene-based interpretation. Confidence may be lower.", name))
+                 pathway_text <- paste("No significant pathways enriched.", 
+                                      "Top Genes:", paste(head(original_genes, 50), collapse=", "))
+            } else {
+                 return(NULL)
+            }
+        } else {
+            message(sprintf("Processing cluster '%s' with Agent 1: The Cleaner...", name))
+            
+            # Format initial pathways for Agent 1
+            cols_to_keep <- intersect(c("ID", "Description", "GeneRatio", "NES", "p.adjust", "pvalue", "geneID"), names(df))
+            pathway_text <- paste(
+                apply(df[, cols_to_keep, drop=FALSE], 1, function(row) {
+                    paste(names(row), row, sep=": ", collapse=", ")
+                }),
+                collapse="\n"
+            )
+        }
         
         # --- Step 1: Agent Cleaner ---
-        clean_res <- run_agent_cleaner(pathway_text, context, model, api_key)
-        if (is.null(clean_res) || is.null(clean_res$kept_pathways)) {
-            warning("Agent Cleaner failed or returned empty results. Falling back to using top pathways.")
-            cleaned_pathways <- pathway_text # Fallback
-        } else {
-            # Re-construct pathway text from kept pathways (assuming Agent 1 returns a list of names/IDs)
-            # For simplicity, we pass the Agent's reasoning and selected list to the next step
-            cleaned_pathways <- paste("Selected Relevant Pathways (filtered by Agent Cleaner):", 
-                                      paste(clean_res$kept_pathways, collapse=", "), 
-                                      "\nReasoning:", clean_res$reasoning, sep="\n")
+        # Skip cleaner in fallback mode or adapt it? 
+        # For now, if fallback, we skip cleaner as there are no pathways to clean.
+        cleaned_pathways <- pathway_text
+        if (!fallback_mode) {
+            clean_res <- run_agent_cleaner(pathway_text, context, model, api_key)
+            if (is.null(clean_res) || is.null(clean_res$kept_pathways)) {
+                warning("Agent Cleaner failed or returned empty results. Falling back to using top pathways.")
+                cleaned_pathways <- pathway_text # Fallback
+            } else {
+                cleaned_pathways <- paste("Selected Relevant Pathways (filtered by Agent Cleaner):", 
+                                          paste(clean_res$kept_pathways, collapse=", "), 
+                                          "\nReasoning:", clean_res$reasoning, sep="\n")
+            }
         }
         
         # --- Step 2: Agent Detective ---
@@ -64,9 +83,14 @@ interpret_agent <- function(x, context = NULL, n_pathways = 50, model = "deepsee
         # Prepare Network Data (PPI)
         ppi_network_text <- NULL
         if (add_ppi) {
-            # Extract genes from the ORIGINAL top list (to ensure coverage) or just the cleaned ones?
-            # Better to use genes from the cleaned pathways to stay focused, but for robustness, let's use the top genes from input df
-            all_genes <- unique(unlist(strsplit(df$geneID, "/")))
+            # Extract genes
+            all_genes <- NULL
+            if (fallback_mode) {
+                all_genes <- original_genes
+            } else {
+                all_genes <- unique(unlist(strsplit(df$geneID, "/")))
+            }
+            
             if (length(all_genes) > 0) {
                 ppi_network_text <- .get_ppi_context_text(all_genes, x)
             }
@@ -75,7 +99,13 @@ interpret_agent <- function(x, context = NULL, n_pathways = 50, model = "deepsee
         # Prepare Fold Change Data
         fc_text <- NULL
         if (!is.null(gene_fold_change)) {
-             all_genes <- unique(unlist(strsplit(df$geneID, "/")))
+             all_genes <- NULL
+             if (fallback_mode) {
+                 all_genes <- original_genes
+             } else {
+                 all_genes <- unique(unlist(strsplit(df$geneID, "/")))
+             }
+             
              common_genes <- intersect(all_genes, names(gene_fold_change))
              if (length(common_genes) > 0) {
                  fc_subset <- gene_fold_change[common_genes]
@@ -85,16 +115,19 @@ interpret_agent <- function(x, context = NULL, n_pathways = 50, model = "deepsee
              }
         }
         
-        detective_res <- run_agent_detective(cleaned_pathways, ppi_network_text, fc_text, context, model, api_key)
+        detective_res <- run_agent_detective(cleaned_pathways, ppi_network_text, fc_text, context, model, api_key, fallback_mode)
         
         # --- Step 3: Agent Synthesizer ---
         message(sprintf("Processing cluster '%s' with Agent 3: The Storyteller...", name))
         
-        final_res <- run_agent_synthesizer(cleaned_pathways, detective_res, context, model, api_key)
+        final_res <- run_agent_synthesizer(cleaned_pathways, detective_res, context, model, api_key, fallback_mode)
         
         # Post-processing: Add cluster name and parse refined network if available
         if (is.list(final_res)) {
             final_res$cluster <- name
+            if (fallback_mode) {
+                final_res$data_source <- "gene_list_only"
+            }
             
             # Merge Detective findings into final result for transparency
             if (!is.null(detective_res)) {
@@ -157,11 +190,12 @@ run_agent_cleaner <- function(pathways, context, model, api_key) {
     call_llm_fanyi(prompt, model, api_key)
 }
 
-run_agent_detective <- function(pathways, ppi_network, fold_change, context, model, api_key) {
+run_agent_detective <- function(pathways, ppi_network, fold_change, context, model, api_key, fallback_mode = FALSE) {
     prompt <- paste0(
         "You are 'Agent Detective', an expert systems biologist.\n",
         "Your task is to identify Key Drivers (Regulators) and Functional Modules based on the filtered pathways and available network data.\n\n",
         if (!is.null(context)) paste0("Context: ", context, "\n\n") else "",
+        if (fallback_mode) "WARNING: No significant enriched pathways found. You are analyzing RAW GENE LISTS. Proceed with caution.\n" else "",
         "Filtered Pathways:\n", pathways, "\n\n",
         if (!is.null(ppi_network)) paste0("PPI Network Evidence:\n", ppi_network, "\n\n") else "",
         if (!is.null(fold_change)) paste0("Gene Fold Changes:\n", fold_change, "\n\n") else "",
@@ -181,7 +215,7 @@ run_agent_detective <- function(pathways, ppi_network, fold_change, context, mod
     call_llm_fanyi(prompt, model, api_key)
 }
 
-run_agent_synthesizer <- function(pathways, detective_report, context, model, api_key) {
+run_agent_synthesizer <- function(pathways, detective_report, context, model, api_key, fallback_mode = FALSE) {
     # Convert detective report to string if it's a list
     detective_text <- ""
     if (!is.null(detective_report) && is.list(detective_report)) {
@@ -202,6 +236,7 @@ run_agent_synthesizer <- function(pathways, detective_report, context, model, ap
         "You are 'Agent Storyteller', a senior scientific writer.\n",
         "Your task is to synthesize the findings from previous agents into a coherent biological narrative.\n\n",
         if (!is.null(context)) paste0("Context: ", context, "\n\n") else "",
+        if (fallback_mode) "WARNING: No significant enriched pathways found. You are analyzing RAW GENE LISTS. Interpretation confidence should be evaluated cautiously.\n" else "",
         "Data Sources:\n",
         "1. Relevant Pathways:\n", pathways, "\n\n",
         "2. Detective's Report (Drivers & Modules):\n", detective_text, "\n\n",
@@ -453,6 +488,18 @@ process_enrichment_input <- function(x, n_pathways) {
         }
         head(df, n)
     }
+
+    # Helper to get gene list from object
+    get_genes <- function(obj, cluster = NULL) {
+        if (inherits(obj, "enrichResult")) {
+             return(obj@gene)
+        } else if (inherits(obj, "compareClusterResult")) {
+             if (!is.null(cluster) && !is.null(obj@geneClusters)) {
+                 return(obj@geneClusters[[cluster]])
+             }
+        }
+        return(NULL)
+    }
     
     # Check if input is a list of enrichment objects (Mixed Database Strategy)
     if (is.list(x) && !inherits(x, "enrichResult") && !inherits(x, "gseaResult") && !inherits(x, "compareClusterResult") && !is.data.frame(x)) {
@@ -467,10 +514,12 @@ process_enrichment_input <- function(x, n_pathways) {
         if (has_cluster) {
             # Split by Cluster and get top N for each cluster
             df_list <- split(combined_df, combined_df$Cluster)
-            return(lapply(df_list, function(d) get_top_n(d, n_pathways)))
+            return(lapply(names(df_list), function(cl_name) {
+                list(df = get_top_n(df_list[[cl_name]], n_pathways), genes = NULL) # List input usually doesn't store raw genes in a structured way easily accessible here
+            }))
         } else {
             # Assume single group (e.g. list of enrichResult for same sample)
-            return(list(Default = get_top_n(combined_df, n_pathways)))
+            return(list(Default = list(df = get_top_n(combined_df, n_pathways), genes = NULL)))
         }
     } else {
         # Single object
@@ -478,10 +527,16 @@ process_enrichment_input <- function(x, n_pathways) {
         if ("Cluster" %in% names(df)) {
             # compareClusterResult
             df_list <- split(df, df$Cluster)
-            return(lapply(df_list, function(d) get_top_n(d, n_pathways)))
+            
+            # Map back to genes if possible
+            return(lapply(names(df_list), function(cl_name) {
+                genes <- get_genes(x, cl_name)
+                list(df = get_top_n(df_list[[cl_name]], n_pathways), genes = genes)
+            }))
         } else {
             # enrichResult / gseaResult
-            return(list(Default = get_top_n(df, n_pathways)))
+            genes <- get_genes(x)
+            return(list(Default = list(df = get_top_n(df, n_pathways), genes = genes)))
         }
     }
 }

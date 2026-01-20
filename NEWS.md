@@ -11,8 +11,9 @@ TODO:
   - e.g. independent test for different omics data and then combine results
 -->
 
-# clusterProfiler 4.19.4.004
+# clusterProfiler 4.19.4.005
 
++ `interpret()` implements a gene-based fallback mode for clusters with no enriched pathways, ensuring comprehensive analysis (2026-01-20, Tue)
 + `plot()` method for interpretation object to visualize the LLM-inferred regulatory network using `ggtangle` (2026-01-20, Tue)
 + `interpret_agent()` supports multi-agent system (Deep Mode) for interpretation (2026-01-20, Tue)
   - Agent Cleaner: Filters noise and selects relevant pathways
