@@ -11,15 +11,13 @@ TODO:
   - e.g. independent test for different omics data and then combine results
 -->
 
-# clusterProfiler 4.19.4.003
+# clusterProfiler 4.19.4.004
 
++ `plot()` method for interpretation object to visualize the LLM-inferred regulatory network using `ggtangle` (2026-01-20, Tue)
 + `interpret_agent()` supports multi-agent system (Deep Mode) for interpretation (2026-01-20, Tue)
   - Agent Cleaner: Filters noise and selects relevant pathways
   - Agent Detective: Identifies key regulators and functional modules using PPI/TF data
   - Agent Synthesizer: Synthesizes findings into a coherent narrative
-
-
-
 + `interpret()` supports 'Knowledge-Guided Interpretation' (2026-01-20, Tue)
   - `add_ppi` parameter to integrate PPI network and identify hub genes
   - `gene_fold_change` parameter to incorporate expression levels

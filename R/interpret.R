@@ -83,29 +83,7 @@ interpret_agent <- function(x, context = NULL, n_pathways = 50, model = "deepsee
             # Better to use genes from the cleaned pathways to stay focused, but for robustness, let's use the top genes from input df
             all_genes <- unique(unlist(strsplit(df$geneID, "/")))
             if (length(all_genes) > 0) {
-                # Reuse the PPI fetching logic (simplified here, ideally modularized)
-                input_for_ppi <- head(all_genes, 50)
-                # Try to get organism
-                current_taxID <- "auto"
-                if (inherits(x, "enrichResult") && !is.list(x)) {
-                     current_taxID <- tryCatch(getTaxID(x@organism), error=function(e) "auto")
-                }
-                
-                g <- tryCatch(getPPI(input_for_ppi, taxID = current_taxID, output = "igraph", network_type = "functional"), error=function(e) NULL)
-                
-                if (!is.null(g)) {
-                     el <- igraph::as_data_frame(g, what="edges")
-                     if (nrow(el) > 0) {
-                         if ("score" %in% names(el)) el <- el[order(el$score, decreasing = TRUE), ]
-                         el_subset <- head(el, 50)
-                         edges_text <- apply(el_subset, 1, function(row) {
-                             score_info <- ""
-                             if ("score" %in% names(row)) score_info <- paste0(" (Score: ", row["score"], ")")
-                             paste0(row["from"], " -- ", row["to"], score_info)
-                         })
-                         ppi_network_text <- paste(edges_text, collapse = "\n")
-                     }
-                }
+                ppi_network_text <- .get_ppi_context_text(all_genes, x)
             }
         }
         
@@ -221,11 +199,16 @@ run_agent_detective <- function(pathways, ppi_network, fold_change, context, mod
 run_agent_synthesizer <- function(pathways, detective_report, context, model, api_key) {
     # Convert detective report to string if it's a list
     detective_text <- ""
-    if (!is.null(detective_report)) {
+    if (!is.null(detective_report) && is.list(detective_report)) {
+        # Check if fields exist before accessing to avoid errors
+        key_drivers <- if (!is.null(detective_report$key_drivers)) paste(detective_report$key_drivers, collapse=", ") else "None identified"
+        functional_modules <- if (!is.null(detective_report$functional_modules)) paste(detective_report$functional_modules, collapse=", ") else "None identified"
+        network_evidence <- if (!is.null(detective_report$network_evidence)) detective_report$network_evidence else "None provided"
+        
         detective_text <- paste(
-            "Key Drivers: ", paste(detective_report$key_drivers, collapse=", "), "\n",
-            "Functional Modules: ", paste(detective_report$functional_modules, collapse=", "), "\n",
-            "Network Evidence: ", detective_report$network_evidence,
+            "Key Drivers: ", key_drivers, "\n",
+            "Functional Modules: ", functional_modules, "\n",
+            "Network Evidence: ", network_evidence,
             sep=""
         )
     }
@@ -297,74 +280,7 @@ interpret <- function(x, context = NULL, n_pathways = 20, model = "deepseek-chat
             # Extract all unique genes from the top pathways
             all_genes <- unique(unlist(strsplit(df$geneID, "/")))
             if (length(all_genes) > 0) {
-                # will add 'organism' slot in compareClusterResult in next release
-                #
-                #
-                #
-                # Attempt to get PPI network
-                # Note: getPPI requires an enrichment object or vector of proteins. 
-                # Here we pass the gene vector. We need taxID. 
-                # If x is enrichResult, we can try to extract organism. 
-                # For simplicity, we try 'auto' if x is enrichResult, otherwise user might need to ensure species is detectable or we skip.
-                
-                # Check if we can get taxID from the original object 'x' if it corresponds to this name
-                # This is tricky because 'x' might be a list or compareClusterResult.
-                # Simplified approach: Use the genes directly.
-                
-                # We need a safe wrapper for getPPI to avoid crashing
-                ppi_res <- tryCatch({
-                    # Try to infer taxID from original object if possible, otherwise default behavior
-                    # Since process_enrichment_input destroys the original object structure, 
-                    # we rely on 'x' if it is a single object, or we skip taxID auto-detection if it's too complex
-                    
-                    # Heuristic: if x is enrichResult, use it.
-                    input_for_ppi <- all_genes
-                    current_taxID <- "auto"
-                    
-                    if (inherits(x, "enrichResult") && !is.list(x)) {
-                         # Single result
-                         current_taxID <- tryCatch(getTaxID(x@organism), error=function(e) "auto")
-                    }
-                    
-                    # Limit to top 50 genes to avoid huge networks and slow API calls
-                    input_for_ppi <- head(all_genes, 50)
-                    
-                    # Get PPI as igraph
-                    g <- getPPI(input_for_ppi, taxID = current_taxID, output = "igraph", network_type = "functional")
-                    
-                    if (!is.null(g)) {
-                         # Convert to edge list string for LLM
-                         # Format: GeneA -- GeneB (Score: 0.9)
-                         el <- igraph::as_data_frame(g, what="edges")
-                         if (nrow(el) > 0) {
-                             # Filter low confidence edges if needed, but getPPI already has some defaults.
-                             # Take top 50 interactions by score if available, or just first 50 to save tokens
-                             if ("score" %in% names(el)) {
-                                 el <- el[order(el$score, decreasing = TRUE), ]
-                             }
-                             el_subset <- head(el, 50)
-                             
-                             # Construct text representation
-                             edges_text <- apply(el_subset, 1, function(row) {
-                                 score_info <- ""
-                                 if ("score" %in% names(row)) score_info <- paste0(" (Score: ", row["score"], ")")
-                                 paste0(row["from"], " -- ", row["to"], score_info)
-                             })
-                             paste(edges_text, collapse = "\n")
-                         } else {
-                             NULL
-                         }
-                    } else {
-                        NULL
-                    }
-                }, error = function(e) {
-                    # warning("Failed to retrieve PPI info: ", e$message)
-                    NULL
-                })
-                
-                if (!is.null(ppi_res)) {
-                    ppi_network_text <- ppi_res
-                }
+                ppi_network_text <- .get_ppi_context_text(all_genes, x)
             }
         }
         
@@ -568,6 +484,42 @@ process_enrichment_input <- function(x, n_pathways) {
             return(list(Default = get_top_n(df, n_pathways)))
         }
     }
+}
+
+.get_ppi_context_text <- function(genes, x = NULL, limit = 50) {
+    if (length(genes) == 0) return(NULL)
+    
+    input_for_ppi <- head(genes, limit)
+    
+    # Try to determine taxID
+    current_taxID <- "auto"
+    if (!is.null(x) && inherits(x, "enrichResult") && !is.list(x)) {
+         current_taxID <- tryCatch(getTaxID(x@organism), error=function(e) "auto")
+    }
+    
+    ppi_res <- tryCatch({
+        g <- getPPI(input_for_ppi, taxID = current_taxID, output = "igraph", network_type = "functional")
+        
+        if (!is.null(g)) {
+             el <- igraph::as_data_frame(g, what="edges")
+             if (nrow(el) > 0) {
+                 if ("score" %in% names(el)) el <- el[order(el$score, decreasing = TRUE), ]
+                 el_subset <- head(el, limit)
+                 edges_text <- apply(el_subset, 1, function(row) {
+                     score_info <- ""
+                     if ("score" %in% names(row)) score_info <- paste0(" (Score: ", row["score"], ")")
+                     paste0(row["from"], " -- ", row["to"], score_info)
+                 })
+                 paste(edges_text, collapse = "\n")
+             } else {
+                 NULL
+             }
+        } else {
+            NULL
+        }
+    }, error = function(e) NULL)
+    
+    return(ppi_res)
 }
 
 construct_interpretation_prompt <- function(pathways, context, ppi_network = NULL, fold_change = NULL) {
