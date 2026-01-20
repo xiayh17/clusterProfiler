@@ -228,6 +228,12 @@ Based on this deep analysis, please provide a comprehensive biological interpret
 - hypothesis: Formulate a coherent biological hypothesis connecting the pathways ('What') to the biological meaning ('So What').
 - narrative: Write a cohesive paragraph suitable for the 'Results' or 'Discussion' section of a scientific paper.
 
+**GROUNDING INSTRUCTION:**
+Every biological claim or interpretation MUST be supported by specific evidence from the provided enrichment results.
+- When mentioning a biological process, cite the supporting pathway name(s) in parentheses.
+- Example: 'The cluster shows signs of proliferation (supported by: Cell cycle, DNA replication)'.
+- Do not make claims that cannot be directly inferred from the provided list.
+
 Please be scientifically rigorous, citing standard biological knowledge where appropriate, and avoid hallucinations.
 
 Ensure the response is a valid JSON object. Do not include any markdown formatting (like ```json).")
@@ -252,6 +258,11 @@ Please validate and refine the preliminary annotation based on the enrichment ev
 2. **Refinement**: Can you assign a more specific subtype or functional state (e.g., refine 'T cells' to 'CD8+ Exhausted T cells' based on 'PD-1 signaling')?
 3. **Correction**: If the evidence strongly contradicts the preliminary label, propose the correct cell type.
 
+**GROUNDING INSTRUCTION:**
+- Every conclusion must be backed by specific pathways or markers from the input list.
+- In the 'reasoning' field, explicitly mention which terms support your decision.
+- Example: 'Refined to Exhausted T cells because of the presence of PD-1 signaling and LAG3 expression.'
+
 Provide the result as a JSON object with the following keys:
 - cell_type: The final identified cell type label (refined or corrected).
 - refinement_status: 'Confirmed', 'Refined', or 'Corrected'.
@@ -268,6 +279,10 @@ Use the following logic:
 1. Analyze the specific marker genes or cell type signatures present in the terms.
 2. Analyze the functional pathways (e.g., KEGG, Reactome) to infer cell state or function.
 3. Combine these evidences to assign a specific Cell Type Label and, if possible, a functional state (e.g., 'CD8+ T cells - Exhausted').
+
+**GROUNDING INSTRUCTION:**
+- Do not guess based on weak evidence.
+- Explicitly cite the markers or pathways that led to your classification in the 'reasoning' section.
 
 Provide the result as a JSON object with the following keys:
 - cell_type: The identified cell type label.
@@ -295,6 +310,10 @@ Use the following logic:
 1. Synthesize the enriched terms to identify the dominant biological theme (e.g., Inflammation, Cell Cycle, Metabolism, Stress Response).
 2. Be specific about the direction or nature of the state (e.g., 'M1 Macrophage Polarization' is better than just 'Immune response'; 'G2/M Arrest' is better than 'Cell Cycle').
 3. Assign a concise Phenotype Label.
+
+**GROUNDING INSTRUCTION:**
+- Every phenotype claim must be supported by evidence.
+- In the 'reasoning' section, list the specific pathways that define this phenotype.
 
 Provide the result as a JSON object with the following keys:
 - phenotype: A concise label for the biological phenotype/state.
