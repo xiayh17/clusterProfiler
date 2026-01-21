@@ -1,12 +1,12 @@
 # clusterProfiler
 
-<img src="https://raw.githubusercontent.com/Bioconductor/BiocStickers/master/clusterProfiler/clusterProfiler.png" height="200" align="right" />
+<img src="inst/sticker/clusterProfiler_hex.png" height="200" align="right" />
 
 [![Project Status: Active - The project has reached a stable, usable
 state and is being actively
 developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
-[![](https://img.shields.io/badge/release%20version-4.18.1-green.svg)](https://www.bioconductor.org/packages/clusterProfiler)
-[![](https://img.shields.io/badge/devel%20version-4.19.2-green.svg)](https://github.com/guangchuangyu/clusterProfiler)
+[![](https://img.shields.io/badge/release%20version-4.18.4-green.svg)](https://www.bioconductor.org/packages/clusterProfiler)
+[![](https://img.shields.io/badge/devel%20version-4.19.4.006-green.svg)](https://github.com/guangchuangyu/clusterProfiler)
 [![Bioc](http://www.bioconductor.org/shields/years-in-bioc/clusterProfiler.svg)](https://www.bioconductor.org/packages/devel/bioc/html/clusterProfiler.html#since)
 
 [![platform](http://www.bioconductor.org/shields/availability/devel/clusterProfiler.svg)](https://www.bioconductor.org/packages/devel/bioc/html/clusterProfiler.html#archives)
@@ -15,7 +15,7 @@ Status](http://www.bioconductor.org/shields/build/devel/bioc/clusterProfiler.svg
 [![codecov](https://codecov.io/gh/GuangchuangYu/clusterProfiler/branch/master/graph/badge.svg)](https://codecov.io/gh/GuangchuangYu/clusterProfiler/)
 
 <!--
-[![Last-changedate](https://img.shields.io/badge/last%20change-2025--11--20-green.svg)](https://github.com/GuangchuangYu/clusterProfiler/commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2026--01--21-green.svg)](https://github.com/GuangchuangYu/clusterProfiler/commits/master)
 -->
 
 - [clusterProfiler](http://bioconductor.org/packages/clusterProfiler)

@@ -10,7 +10,7 @@ Biocpkg <- function (pkg) {
 
 #  clusterProfiler
 
-<img src="https://raw.githubusercontent.com/Bioconductor/BiocStickers/master/clusterProfiler/clusterProfiler.png" height="200" align="right" />
+<img src="inst/sticker/clusterProfiler_hex.png" height="200" align="right" />
 
 [![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 `r badge_bioc_release("clusterProfiler", "green")`

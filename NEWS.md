@@ -11,8 +11,9 @@ TODO:
   - e.g. independent test for different omics data and then combine results
 -->
 
-# clusterProfiler 4.19.4.005
+# clusterProfiler 4.19.4.006
 
++ `gson_GO_local()` to support local GO annotation by adding ancestral terms (2026-01-21, Wed)
 + `interpret()` implements a gene-based fallback mode for clusters with no enriched pathways, ensuring comprehensive analysis (2026-01-20, Tue)
 + `plot()` method for interpretation object to visualize the LLM-inferred regulatory network using `ggtangle` (2026-01-20, Tue)
 + `interpret_agent()` supports multi-agent system (Deep Mode) for interpretation (2026-01-20, Tue)
