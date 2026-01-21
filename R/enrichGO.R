@@ -41,6 +41,56 @@ enrichGO <- function(
     readable = FALSE,
     pool = FALSE
 ) {
+    if (keyType != "ENTREZID") {
+        # This is to avoid Memory Boom for non-ENTREZID keyType
+        # see https://github.com/YuLab-SMU/clusterProfiler/issues/805
+        #
+        # If we use `get_GO_data` to build the GSON object for non-ENTREZID keyType,
+        # it will trigger `AnnotationDbi::mapIds` to map all GO terms to the specific keyType.
+        # This will be extremely slow and memory consuming if the keyType is ACCNUM,
+        # because one gene can have multiple ACCNUMs.
+        #
+        # So we first map the input gene to ENTREZID, and then use ENTREZID to do the enrichment analysis.
+        # After that, we map the result back to the original keyType.
+        
+        gene <- clusterProfiler::bitr(gene, fromType = keyType, toType = "ENTREZID", OrgDb = OrgDb)
+        if (is.null(gene)) {
+            message("--> No gene can be mapped....")
+            return(NULL)
+        }
+        
+        res <- enrichGO(
+            gene = gene$ENTREZID,
+            OrgDb = OrgDb,
+            keyType = "ENTREZID",
+            ont = ont,
+            pvalueCutoff = pvalueCutoff,
+            pAdjustMethod = pAdjustMethod,
+            universe = universe,
+            qvalueCutoff = qvalueCutoff,
+            minGSSize = minGSSize,
+            maxGSSize = maxGSSize,
+            readable = readable,
+            pool = pool
+        )
+        
+        if (is.null(res)) {
+            return(NULL)
+        }
+        
+        res@keytype <- keyType
+        
+        # map geneID back to original keyType
+        if (readable) {
+            res <- setReadable(res, OrgDb, keyType = "ENTREZID")
+        } else {
+            res <- setReadable(res, OrgDb, keyType = "ENTREZID", toType = keyType)
+            res@readable <- FALSE
+        }
+        
+        return(res)
+    }
+
     ont %<>% toupper
     ont <- match.arg(ont, c("BP", "MF", "CC", "ALL"))
     GO_DATA <- get_GO_data(OrgDb, ont, keyType)
