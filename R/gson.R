@@ -137,6 +137,143 @@ gson_WP <- function(organism) {
     get_wp_data(organism, output = "GSON")
 }
 
+#' Build a gson object that annotate Gene Ontology
+#'
+#' @param data a two-column data.frame of original GO annotation. The columns are "gene_id" and "go_id".
+#' @param ont type of GO annotation, which is "ALL", "BP", "MF", or "CC". default: "ALL".
+#' @param species name of species. Default: NULL.
+#' @param ... pass to `gson::gson()` constructor.
+#'
+#' @return a `gson` instance
+#' @export
+#'
+#' @examples
+#'  data = data.frame(gene_id = "gene1",
+#'                    go_id = c("GO:0035492", "GO:0009764", "GO:0031063", "GO:0033714", "GO:0036349"))
+#'  gson_GO_local(data, species = "E. coli")
+gson_GO_local <- function(data,
+                     ont = c("ALL", "BP", "CC", "MF"),
+                     species = NULL,
+                     ...){
+  ont <- match.arg(ont)
+
+  if (ncol(data) < 2) stop("data must have at least 2 columns: gene_id and go_id")
+  colnames(data)[1:2] <- c("gene_id", "go_id")
+  
+  data <- unique(data) # cleanup
+  if (nrow(data) == 0) {
+    stop("Data is empty in this call.")
+  }
+
+  # resources from `GO.db`
+  goterms <- AnnotationDbi::Ontology(GO.db::GOTERM)
+  termname <- AnnotationDbi::Term(GO.db::GOTERM)
+  go.db_info <- GO.db::GO_dbInfo()
+  go.db_source_date <- go.db_info[go.db_info$name == "GOSOURCEDATE", "value"]
+  
+  # filter GO terms
+  data[["ontology"]] <- goterms[data[["go_id"]]]
+  n_na_ont <- sum(is.na(data[["ontology"]]))
+  if ( n_na_ont > 0){
+    warning(sprintf("%s GO term(s) are too new for current `GO.db` [source date: %s],\n  and are to be dropped. Consider to update `GO.db` if possible.",
+                    n_na_ont,
+                    go.db_source_date))
+  }
+
+  # Build ancestry map only for input GO IDs
+  input_go <- unique(data$go_id)
+  
+  # Helper to get ancestors for specific ontology
+  get_ancestors <- function(goids, ont_type) {
+      if (ont_type == "BP") return(AnnotationDbi::mget(goids, GO.db::GOBPANCESTOR, ifnotfound=NA))
+      if (ont_type == "CC") return(AnnotationDbi::mget(goids, GO.db::GOCCANCESTOR, ifnotfound=NA))
+      if (ont_type == "MF") return(AnnotationDbi::mget(goids, GO.db::GOMFANCESTOR, ifnotfound=NA))
+      return(list())
+  }
+
+  ancestor_list <- list()
+  if (ont == "ALL") {
+      # For ALL, we need to check ontology of each ID or try all maps
+      # More efficient: split input by ontology
+      bp_ids <- input_go[goterms[input_go] == "BP"]
+      cc_ids <- input_go[goterms[input_go] == "CC"]
+      mf_ids <- input_go[goterms[input_go] == "MF"]
+      
+      anc_bp <- if(length(bp_ids) > 0) get_ancestors(bp_ids, "BP") else list()
+      anc_cc <- if(length(cc_ids) > 0) get_ancestors(cc_ids, "CC") else list()
+      anc_mf <- if(length(mf_ids) > 0) get_ancestors(mf_ids, "MF") else list()
+      
+      ancestor_list <- c(anc_bp, anc_cc, anc_mf)
+  } else {
+      ancestor_list <- get_ancestors(input_go, ont)
+  }
+  
+  # Clean up NA results
+  ancestor_list <- ancestor_list[!is.na(ancestor_list)]
+  
+  # Expand data to include ancestors
+  # Map gene -> direct GO -> ancestor GOs
+  
+  # Create a mapping table: direct_go -> ancestor_go
+  if (length(ancestor_list) > 0) {
+      anc_df <- utils::stack(ancestor_list)
+      colnames(anc_df) <- c("ancestor_go", "go_id")
+      
+      # Merge with original data to get gene -> ancestor links
+      # data: gene_id, go_id
+      # anc_df: go_id, ancestor_go
+      
+      # Join
+      merged <- merge(data[, c("gene_id", "go_id")], anc_df, by="go_id", all.x=TRUE)
+      
+      # Prepare gsid2gene with both direct and ancestor GOs
+      # Direct: gene_id, go_id
+      df_direct <- data[, c("go_id", "gene_id")]
+      colnames(df_direct) <- c("gsid", "gene")
+      
+      # Ancestor: gene_id, ancestor_go
+      df_anc <- merged[!is.na(merged$ancestor_go), c("ancestor_go", "gene_id")]
+      colnames(df_anc) <- c("gsid", "gene")
+      
+      gsid2gene <- rbind(df_direct, df_anc)
+  } else {
+      # No ancestors found or needed
+      gsid2gene <- data[, c("go_id", "gene_id")]
+      colnames(gsid2gene) <- c("gsid", "gene")
+  }
+
+  # Add ontology info
+  gsid2gene$ontology <- goterms[gsid2gene$gsid]
+  
+  gsid2gene <- gsid2gene %>%
+    dplyr::filter(.data$gsid != "all") %>%
+    unique()
+
+  if (ont != "ALL"){
+    gsid2gene <- gsid2gene %>%
+      dplyr::filter(.data$ontology == ont)
+  }
+
+  # gsid2name
+  uniq_gsid <- unique(gsid2gene$gsid) %>% as.character()
+  gsid2name <- data.frame(
+    gsid = uniq_gsid,
+    name = termname[uniq_gsid] %>% as.character()
+  )
+
+  # construct `gson` object
+  gson::gson(
+    gsid2gene = gsid2gene,
+    gsid2name = gsid2name,
+    species = species,
+    gsname = paste0("Gene Ontology: ", ont),
+    version = sprintf("[GO.db source date: %s]", go.db_source_date),
+    accessed_date = as.character(Sys.Date()),
+    ...
+  )
+}
+
+
 
 
 #' Build KEGG annotation for novel species using KEGG Mapper
