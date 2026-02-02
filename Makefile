@@ -28,9 +28,10 @@ build2:
 	R CMD build --no-build-vignettes $(PKGSRC)
 
 install:
-	cd ..;\
-	R CMD INSTALL $(PKGNAME)_$(PKGVERS).tar.gz
-
+	#cd ..;\
+	#R CMD INSTALL $(PKGNAME)_$(PKGVERS).tar.gz
+	Rscript -e 'devtools::install()'
+	
 check: #build
 	#cd ..;\
 	# Rscript -e 'rcmdcheck::rcmdcheck("$(PKGNAME)_$(PKGVERS).tar.gz")'

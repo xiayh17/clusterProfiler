@@ -149,7 +149,24 @@ add_GO_Ontology <- function(obj, GO_DATA) {
     }
 
     df <- obj@result
-    GO2ONT <- get("GO2ONT", envir=GO_DATA)
+    
+    # Handle GO_DATA as either environment or GSON object
+    if (is.environment(GO_DATA)) {
+        GO2ONT <- get("GO2ONT", envir=GO_DATA)
+    } else if (inherits(GO_DATA, "GSON")) {
+        # Extract GO IDs from GSON and get ontology from GO.db
+        go_ids <- unique(GO_DATA@gsid2gene$gsid)
+        # Get ontology mapping from GO.db
+        if (requireNamespace("GO.db", quietly = TRUE)) {
+            GO2ONT <- AnnotationDbi::Ontology(GO.db::GOTERM)[go_ids]
+            names(GO2ONT) <- go_ids
+        } else {
+            stop("GO.db package required for ontology mapping")
+        }
+    } else {
+        stop("GO_DATA must be an environment or GSON object")
+    }
+    
     df <- cbind(ONTOLOGY=GO2ONT[df$ID], df)
     obj@result <- df
     return(obj)

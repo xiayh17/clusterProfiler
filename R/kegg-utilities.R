@@ -91,7 +91,7 @@ get_cached_kegg_data <- function(type = "category") {
     basefile <- sprintf("kegg_%s", type)
     file <- sprintf("%s.rda", basefile)
     urls <- c("https://yulab-smu.top/clusterProfiler",
-              "https://raw.githubusercontent.com/YuLab-SMU/clusterProfiler/refs/heads/gh-pages")
+              "https://raw.githubusercontent.com/YuLab-SMU/clusterProfiler/gh-pages")
                   
     d <- download_yulab_file(file, urls, gzfile=FALSE, appname="clusterProfiler")
     load(d, envir = get_cache())
