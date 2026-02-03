@@ -48,7 +48,8 @@ Suggests:
     readr,
     org.Hs.eg.db,
     quarto,
-    testthat
+    testthat,
+    ggplot2
 VignetteBuilder: quarto
 ByteCompile: true
 License: Artistic-2.0
