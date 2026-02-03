@@ -21,12 +21,12 @@ plot.interpretation <- function(x, layout = "nicely", ...) {
     
     # Use ggtangle to visualize the network
     # Note: ggtangle extends ggplot2
-    p <- ggtangle::ggtangle(g, layout = layout, ...)
+    p <- ggplot2::ggplot(g, layout = layout, ...)
     
     # Add edges
     # We try to map interaction type to color if available
     if ("interaction" %in% igraph::edge_attr_names(g)) {
-        p <- p + ggtangle::geom_edge(ggplot2::aes(color = interaction)) +
+        p <- p + ggtangle::geom_edge(ggplot2::aes(color = !!rlang::sym("interaction"))) +
              ggplot2::scale_color_manual(values = c(
                  activation = "green3", 
                  inhibition = "red3", 
@@ -39,8 +39,8 @@ plot.interpretation <- function(x, layout = "nicely", ...) {
     }
     
     # Add nodes and labels
-    p <- p + ggtangle::geom_node_point(size = 5, color = "lightblue") + 
-         ggtangle::geom_node_text(ggplot2::aes(label = name), repel = TRUE) +
+    p <- p + ggplot2::geom_point(size = 5, color = "lightblue") + 
+         ggtangle::geom_cnet_label(ggplot2::aes(label = !!rlang::sym("name"))) +
          ggplot2::theme_void()
     
     main_title <- "Refined Regulatory Network"

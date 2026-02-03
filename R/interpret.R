@@ -269,6 +269,10 @@ run_agent_synthesizer <- function(pathways, detective_report, context, model, ap
 #' @param n_pathways Number of top significant pathways to include in the analysis. Default is 20.
 #' @param model The LLM model to use. Default is "deepseek-chat". Supported models include "deepseek-chat", "glm-4", "qwen-turbo" etc.
 #' @param api_key The API key for the LLM. If NULL, it tries to fetch from `getOption('yulab_translate')` based on the model.
+#' @param task Task type, default is "interpretation". Other options include "cell_type"/"annotation" and "phenotype"/"phenotyping".
+#' @param prior Optional prior knowledge (e.g., a biological hypothesis) to guide the task.
+#' @param add_ppi Boolean, whether to use PPI network integration.
+#' @param gene_fold_change Named vector of logFC for expression context.
 #' @return A character string containing the LLM-generated interpretation.
 #' @author Guangchuang Yu
 #' @export
@@ -847,7 +851,6 @@ Ensure the response is a valid JSON object. Do not include any markdown formatti
     return(base_prompt)
 }
 
-#' @importFrom jsonlite toJSON fromJSON
 call_llm_fanyi <- function(prompt, model, api_key) {
     if (!requireNamespace("fanyi", quietly = TRUE)) {
         stop("Package 'fanyi' is required for interpret(). Please install it.")
