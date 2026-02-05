@@ -11,9 +11,9 @@ TODO:
   - e.g. independent test for different omics data and then combine results
 -->
 
-# clusterProfiler 4.19.5.001
+# clusterProfiler 4.19.5.002
 
-+ fixed incorrect `ggtangle::ggtangle()` function call in `plot.interpretation()` method, now correctly uses `ggplot()` for igraph objects (2026-02-05, Thu)
++ bug fixed for `plot.interpret` (2026-02-05, Thu)
 
 # clusterProfiler 4.19.5
 

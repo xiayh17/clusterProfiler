@@ -39,8 +39,8 @@ plot.interpretation <- function(x, layout = "nicely", ...) {
     }
     
     # Add nodes and labels
-    p <- p + ggtangle::geom_node_point(size = 5, color = "lightblue") + 
-         ggtangle::geom_node_text(ggplot2::aes(label = name), repel = TRUE) +
+    p <- p + geom_point(size = 5, color = "lightblue") + 
+         geom_label(ggplot2::aes(label = name)) +
          ggplot2::theme_void()
     
     main_title <- "Refined Regulatory Network"
