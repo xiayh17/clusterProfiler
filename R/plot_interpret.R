@@ -20,8 +20,8 @@ plot.interpretation <- function(x, layout = "nicely", ...) {
     g <- x$network
     
     # Use ggtangle to visualize the network
-    # Note: ggtangle extends ggplot2
-    p <- ggtangle::ggtangle(g, layout = layout, ...)
+    # Note: ggtangle extends ggplot2 
+    p <- ggplot(g, layout = layout, ...)
     
     # Add edges
     # We try to map interaction type to color if available
