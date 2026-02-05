@@ -45,7 +45,6 @@ Suggests:
     DOSE,
     fanyi (>= 0.1.0),
     ggtangle,
-    jsonlite,
     readr,
     org.Hs.eg.db,
     quarto,

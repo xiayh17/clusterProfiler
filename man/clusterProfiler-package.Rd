@@ -4,9 +4,9 @@
 \name{clusterProfiler-package}
 \alias{clusterProfiler}
 \alias{clusterProfiler-package}
-\title{clusterProfiler: A universal enrichment tool for interpreting omics data}
+\title{clusterProfiler: A Universal Enrichment Tool for Interpreting Omics Data}
 \description{
-This package supports functional characteristics of both coding and non-coding genomics data for thousands of species with up-to-date gene annotation. It provides a universal interface for gene functional annotation from a variety of sources and thus can be applied in diverse scenarios. It provides a tidy interface to access, manipulate, and visualize enrichment results to help users achieve efficient data interpretation. Datasets obtained from multiple treatments and time points can be analyzed and compared in a single run, easily revealing functional consensus and differences among distinct gene clusters.
+A universal tool for interpreting functional characteristics of omics data. It supports Over-Representation Analysis (ORA) and Gene Set Enrichment Analysis (GSEA) for both coding and non-coding genomics data of thousands of species. It provides a unified and tidy interface to access, manipulate, and visualize enrichment results. A key capability is the simultaneous analysis and comparison of datasets from multiple treatments or time points. Furthermore, it integrates Large Language Model (LLM) capabilities to provide automated and insightful interpretation of enrichment results.
 }
 \seealso{
 Useful links:
