@@ -11,6 +11,10 @@ TODO:
   - e.g. independent test for different omics data and then combine results
 -->
 
+# clusterProfiler 4.19.5.002
+
++ bug fixed for `plot.interpret` (2026-02-05, Thu)
+
 # clusterProfiler 4.19.5
 
 + `interpret()` prompt optimized with 'Comparative Analysis' and 'Rule of Exclusion' to better distinguish cell types with shared functions (e.g. NK vs CD8+ T cells) using specific marker genes (2026-01-22, Thu)

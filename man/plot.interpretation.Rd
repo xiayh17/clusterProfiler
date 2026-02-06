@@ -11,7 +11,7 @@
 
 \item{layout}{Graph layout, default is "nicely".}
 
-\item{...}{Additional arguments passed to `ggtangle::ggtangle`.}
+\item{...}{Additional arguments passed to `ggplot2::ggplot`.}
 }
 \description{
 plot

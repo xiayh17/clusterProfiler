@@ -1,7 +1,7 @@
 Package: clusterProfiler
 Type: Package
 Title: A Universal Enrichment Tool for Interpreting Omics Data
-Version: 4.19.5
+Version: 4.19.5.002
 Authors@R: c(
     person(given = "Guangchuang", family = "Yu",        email = "guangchuangyu@gmail.com",   role  = c("aut", "cre", "cph"), comment = c(ORCID = "0000-0002-6485-8781")),
     person(given = "Li-Gen",      family = "Wang",      email = "reeganwang020@gmail.com",   role  = "ctb"),
@@ -38,7 +38,8 @@ Imports:
     stats,
     tidyr,
     utils,
-    yulab.utils (>= 0.2.3)
+    yulab.utils (>= 0.2.3),
+    ggplot2
 Suggests:
     AnnotationHub,
     BiocManager,
@@ -48,8 +49,7 @@ Suggests:
     readr,
     org.Hs.eg.db,
     quarto,
-    testthat,
-    ggplot2
+    testthat
 VignetteBuilder: quarto
 ByteCompile: true
 License: Artistic-2.0
