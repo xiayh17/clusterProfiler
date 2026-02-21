@@ -26,6 +26,14 @@ interpret(
 \item{model}{The LLM model to use. Default is "deepseek-chat". Supported models include "deepseek-chat", "glm-4", "qwen-turbo" etc.}
 
 \item{api_key}{The API key for the LLM. If NULL, it tries to fetch from `getOption('yulab_translate')` based on the model.}
+
+\item{task}{Task type, default is "interpretation". Other options include "cell_type"/"annotation" and "phenotype"/"phenotyping".}
+
+\item{prior}{Optional prior knowledge (e.g., a biological hypothesis) to guide the task.}
+
+\item{add_ppi}{Boolean, whether to use PPI network integration.}
+
+\item{gene_fold_change}{Named vector of logFC for expression context.}
 }
 \value{
 A character string containing the LLM-generated interpretation.
