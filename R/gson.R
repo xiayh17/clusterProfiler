@@ -149,7 +149,7 @@ gson_WP <- function(organism) {
 #'
 #' @examples
 #'  data = data.frame(gene_id = "gene1",
-#'                    go_id = c("GO:0035492", "GO:0009764", "GO:0031063", "GO:0033714", "GO:0036349"))
+#'                    go_id = c("GO:0035492", "GO:0009764", "GO:0031040", "GO:0033714", "GO:0036349"))
 #'  gson_GO_local(data, species = "E. coli")
 gson_GO_local <- function(data,
                      ont = c("ALL", "BP", "CC", "MF"),

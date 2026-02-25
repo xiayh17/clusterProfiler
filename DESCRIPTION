@@ -38,14 +38,14 @@ Imports:
     stats,
     tidyr,
     utils,
-    yulab.utils (>= 0.2.3)
+    yulab.utils (>= 0.2.3),
+    ggplot2
 Suggests:
     AnnotationHub,
     BiocManager,
     DOSE,
     fanyi (>= 0.1.0),
     ggtangle,
-    jsonlite,
     readr,
     org.Hs.eg.db,
     quarto,

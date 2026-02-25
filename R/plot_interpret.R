@@ -3,7 +3,10 @@
 #' @title plot
 #' @param x An `interpretation` object.
 #' @param layout Graph layout, default is "nicely".
-#' @param ... Additional arguments passed to `ggtangle::ggtangle`.
+#' @param ... Additional arguments passed to `ggplot2::ggplot`.
+#' @importFrom ggplot2 ggplot geom_label geom_point aes scale_color_manual
+#' @importFrom ggplot2 theme_void ggtitle
+#' @importFrom rlang sym
 #' @export
 plot.interpretation <- function(x, layout = "nicely", ...) {
     
@@ -26,8 +29,8 @@ plot.interpretation <- function(x, layout = "nicely", ...) {
     # Add edges
     # We try to map interaction type to color if available
     if ("interaction" %in% igraph::edge_attr_names(g)) {
-        p <- p + ggtangle::geom_edge(ggplot2::aes(color = interaction)) +
-             ggplot2::scale_color_manual(values = c(
+        p <- p + ggtangle::geom_edge(aes(color = !!sym("interaction"))) +
+             scale_color_manual(values = c(
                  activation = "green3", 
                  inhibition = "red3", 
                  repression = "red3",
@@ -40,15 +43,15 @@ plot.interpretation <- function(x, layout = "nicely", ...) {
     
     # Add nodes and labels
     p <- p + geom_point(size = 5, color = "lightblue") + 
-         geom_label(ggplot2::aes(label = name)) +
-         ggplot2::theme_void()
+         geom_label(aes(label = !!sym("name"))) +
+         theme_void()
     
     main_title <- "Refined Regulatory Network"
     if (!is.null(x$cluster)) {
         main_title <- paste0(main_title, " (", x$cluster, ")")
     }
     
-    p <- p + ggplot2::ggtitle(main_title)
+    p <- p + ggtitle(main_title)
     
     return(p)
 }
