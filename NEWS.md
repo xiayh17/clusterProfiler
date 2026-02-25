@@ -11,8 +11,9 @@ TODO:
   - e.g. independent test for different omics data and then combine results
 -->
 
-# clusterProfiler 4.19.5.002
+# clusterProfiler 4.19.5.003
 
++ update `ko2name()` to robustly parse KO names via KEGG REST, support vector input with deduplication, and return NA when NAME is missing (2026-02-25, Wed)
 + bug fixed for `plot.interpret` (2026-02-05, Thu)
 
 # clusterProfiler 4.19.5

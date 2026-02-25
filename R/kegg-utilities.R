@@ -216,13 +216,25 @@ kegg_list <- function(db, species = NULL) {
 #' @export
 #' @author guangchuang yu
 ko2name <- function(ko) {
-    p <- kegg_list('pathway')
-    ko2 <- gsub("^ko", "path:map", ko)
-    ko.df <- data.frame(ko=ko, from=ko2)
-    res <- merge(ko.df, p, by = 'from', all.x=TRUE)
-    res <- res[, c("ko", "to")]
-    colnames(res) <- c("ko", "name")
-    return(res)
+    ko <- unique(na.omit(as.character(ko)))
+    res <- lapply(ko, function(k) {
+        url <- paste0("https://rest.kegg.jp/get/", k)
+        content <- tryCatch(yulab.utils::yread(url), error = function(e) character())
+        if (!length(content)) {
+            data.frame(ko = k, name = NA_character_, stringsAsFactors = FALSE)
+        } else {
+            nm_line <- content[grep("^NAME[[:space:]]+", content)][1]
+            if (is.na(nm_line)) {
+                nm <- NA_character_
+            } else {
+                m <- regexpr("^NAME[[:space:]]+(.+)$", nm_line, perl = TRUE)
+                whole <- regmatches(nm_line, m)
+                nm <- sub("^NAME[[:space:]]+", "", whole)
+            }
+            data.frame(ko = k, name = nm, stringsAsFactors = FALSE)
+        }
+    })
+    do.call(rbind, res)
 }
 
 
