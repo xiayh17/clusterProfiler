@@ -169,29 +169,29 @@ infer_model_id <- function(model) {
   if (grepl(":", model, fixed = TRUE)) {
     return(model)
   }
-  
+
   provider <- NULL
-  
+
   patterns <- list(
-    deepseek  = "^deepseek-",
-    openai    = "^(gpt-|o[0-9]|chatgpt-)",
+    deepseek = "^deepseek-",
+    openai = "^(gpt-|o[0-9]|chatgpt-)",
     anthropic = "claude",
-    gemini    = "^gemini-",
-    bailian   = "^(qwen-|qwq-|glm-)",
+    gemini = "^gemini-",
+    bailian = "^(qwen-|qwq-|glm-)",
     volcengine = "^(doubao-|deepseek-r1)",
-    stepfun   = "^step-",
-    xai       = "^grok-",
-    nvidia    = "^(nvidia/|meta/llama)",
+    stepfun = "^step-",
+    xai = "^grok-",
+    nvidia = "^(nvidia/|meta/llama)",
     openrouter = "/"
   )
-  
+
   for (name in names(patterns)) {
     if (grepl(patterns[[name]], model, ignore.case = TRUE)) {
       provider <- name
       break
     }
   }
-  
+
   if (is.null(provider)) {
     rlang::abort(c(
       paste0("Cannot infer provider for model: ", model),
@@ -199,7 +199,7 @@ infer_model_id <- function(model) {
       "i" = "Example: 'gemini:gemini-3-flash-preview', 'openai:gpt-4o', 'deepseek:deepseek-chat'"
     ))
   }
-  
+
   full_id <- paste0(provider, ":", model)
   rlang::warn(c(
     paste0("Inferred model ID as '", full_id, "'. Consider using the explicit format."),
@@ -222,9 +222,11 @@ process_enrichment_input <- function(x, n_pathways) {
     }
     rlang::abort("Unsupported input type. Expected enrichResult, compareClusterResult, gseaResult, or data.frame.")
   }
-  
+
   get_top_n <- function(df, n) {
-    if (nrow(df) == 0) return(df)
+    if (nrow(df) == 0) {
+      return(df)
+    }
     if ("p.adjust" %in% names(df)) {
       df <- df[order(df$p.adjust), ]
     } else if ("pvalue" %in% names(df)) {
@@ -232,7 +234,7 @@ process_enrichment_input <- function(x, n_pathways) {
     }
     utils::head(df, n)
   }
-  
+
   get_genes <- function(obj, cluster = NULL) {
     if (inherits(obj, "enrichResult")) {
       return(obj@gene)
@@ -245,9 +247,9 @@ process_enrichment_input <- function(x, n_pathways) {
     }
     NULL
   }
-  
+
   if (is.list(x) && !inherits(x, "enrichResult") && !inherits(x, "gseaResult") &&
-      !inherits(x, "compareClusterResult") && !is.data.frame(x)) {
+    !inherits(x, "compareClusterResult") && !is.data.frame(x)) {
     if ("df" %in% names(x) && is.data.frame(x$df)) {
       return(list(Default = x))
     }
@@ -285,27 +287,36 @@ process_enrichment_input <- function(x, n_pathways) {
 
 #' @keywords internal
 .get_ppi_context_text <- function(genes, x = NULL, limit = 50) {
-  if (length(genes) == 0) return(NULL)
-  
+  if (length(genes) == 0) {
+    return(NULL)
+  }
+
   input_for_ppi <- utils::head(genes, limit)
   current_taxID <- "auto"
   if (!is.null(x) && inherits(x, "enrichResult") && !is.list(x)) {
     current_taxID <- tryCatch(getTaxID(x@organism), error = function(e) "auto")
   }
-  
-  tryCatch({
-    g <- getPPI(input_for_ppi, taxID = current_taxID, output = "igraph", network_type = "functional")
-    if (is.null(g)) return(NULL)
-    el <- igraph::as_data_frame(g, what = "edges")
-    if (nrow(el) == 0) return(NULL)
-    if ("score" %in% names(el)) el <- el[order(el$score, decreasing = TRUE), ]
-    el_subset <- utils::head(el, limit)
-    edges_text <- apply(el_subset, 1, function(row) {
-      score_info <- if ("score" %in% names(row)) paste0(" (Score: ", row["score"], ")") else ""
-      paste0(row["from"], " -- ", row["to"], score_info)
-    })
-    paste(edges_text, collapse = "\n")
-  }, error = function(e) NULL)
+
+  tryCatch(
+    {
+      g <- getPPI(input_for_ppi, taxID = current_taxID, output = "igraph", network_type = "functional")
+      if (is.null(g)) {
+        return(NULL)
+      }
+      el <- igraph::as_data_frame(g, what = "edges")
+      if (nrow(el) == 0) {
+        return(NULL)
+      }
+      if ("score" %in% names(el)) el <- el[order(el$score, decreasing = TRUE), ]
+      el_subset <- utils::head(el, limit)
+      edges_text <- apply(el_subset, 1, function(row) {
+        score_info <- if ("score" %in% names(row)) paste0(" (Score: ", row["score"], ")") else ""
+        paste0(row["from"], " -- ", row["to"], score_info)
+      })
+      paste(edges_text, collapse = "\n")
+    },
+    error = function(e) NULL
+  )
 }
 
 # ============================================================================
@@ -452,8 +463,10 @@ process_enrichment_input <- function(x, n_pathways) {
 #'   p.adjust = c(0.01, 0.02),
 #'   geneID = c("TP53/BAX", "MYC/CCND1/CDK4")
 #' )
-#' res <- interpret(df, model = "deepseek:deepseek-chat",
-#'                  context = "Cancer proliferation study")
+#' res <- interpret(df,
+#'   model = "deepseek:deepseek-chat",
+#'   context = "Cancer proliferation study"
+#' )
 #' print(res)
 #' }
 interpret <- function(x,
@@ -468,31 +481,31 @@ interpret <- function(x,
                       temperature = 0.3,
                       verbose = FALSE) {
   if (missing(x)) rlang::abort("Enrichment result 'x' is required.")
-  
+
   old_debug <- getOption("aisdk.debug", FALSE)
   if (isTRUE(verbose)) {
     options(aisdk.debug = TRUE)
     on.exit(options(aisdk.debug = old_debug), add = TRUE)
   }
-  
+
   model <- infer_model_id(model)
   res_list <- process_enrichment_input(x, n_pathways)
-  
+
   if (length(res_list) == 0) {
     return(structure(
       list(overview = "No significant pathways found to interpret.", confidence = "None"),
       class = c("interpretation", "list")
     ))
   }
-  
+
   results <- lapply(names(res_list), function(name) {
     message(sprintf("Interpreting cluster: %s", name))
     item <- res_list[[name]]
     df <- item$df
     genes <- item$genes
-    
+
     top_genes_text <- .get_top_genes_text(genes, gene_fold_change)
-    
+
     if (nrow(df) == 0 && is.null(top_genes_text)) {
       res <- list(
         cluster = name,
@@ -502,21 +515,21 @@ interpret <- function(x,
       class(res) <- c("interpretation", "list")
       return(res)
     }
-    
+
     pathway_text <- if (nrow(df) > 0) .format_pathway_text(df) else "No significant enriched pathways found."
-    
+
     current_prior <- .resolve_prior(prior, name)
     ppi_text <- .get_ppi_if_requested(add_ppi, df, genes, x)
     fc_text <- .get_fc_text(gene_fold_change, df, genes)
-    
+
     user_prompt <- .build_data_sections(
       pathway_text, context, ppi_text, fc_text, top_genes_text
     )
-    
+
     if (!is.null(current_prior) && nzchar(current_prior)) {
       user_prompt <- paste0(user_prompt, "\n\nPreliminary Annotation:\n", current_prior)
     }
-    
+
     res <- .call_generate_object(
       model = model,
       task = task,
@@ -526,13 +539,13 @@ interpret <- function(x,
       max_tokens = max_tokens,
       temperature = temperature
     )
-    
+
     res$cluster <- name
     .postprocess_network(res)
   })
-  
+
   names(results) <- names(res_list)
-  
+
   if (length(results) == 1 && names(results)[1] == "Default") {
     return(results[[1]])
   }
@@ -561,7 +574,7 @@ interpret <- function(x,
 #' @param model The LLM model in `provider:model` format.
 #' @param add_ppi Logical, whether to query PPI data. Default FALSE.
 #' @param gene_fold_change Named numeric vector of log fold changes.
-#' @param max_tokens Maximum tokens per agent call. Default 4096.
+#' @param max_tokens Maximum tokens per agent call. Default 8192.
 #' @param temperature Sampling temperature. Default 0.3.
 #' @return An `interpretation` object with deep analysis fields plus
 #'   regulatory_drivers, refined_network, and network_evidence from the
@@ -569,8 +582,10 @@ interpret <- function(x,
 #' @export
 #' @examples
 #' \dontrun{
-#' res <- interpret_agent(df, model = "openai:gpt-4o",
-#'                        context = "scRNA-seq of mouse MI day 3")
+#' res <- interpret_agent(df,
+#'   model = "openai:gpt-4o",
+#'   context = "scRNA-seq of mouse MI day 3"
+#' )
 #' print(res)
 #' }
 interpret_agent <- function(x,
@@ -579,33 +594,33 @@ interpret_agent <- function(x,
                             model = "deepseek:deepseek-chat",
                             add_ppi = FALSE,
                             gene_fold_change = NULL,
-                            max_tokens = 4096,
+                            max_tokens = 8192,
                             temperature = 0.3,
                             verbose = FALSE) {
   if (missing(x)) rlang::abort("Enrichment result 'x' is required.")
-  
+
   old_debug <- getOption("aisdk.debug", FALSE)
   if (isTRUE(verbose)) {
     options(aisdk.debug = TRUE)
     on.exit(options(aisdk.debug = old_debug), add = TRUE)
   }
-  
+
   model <- infer_model_id(model)
   res_list <- process_enrichment_input(x, n_pathways)
-  
+
   if (length(res_list) == 0) {
     return(structure(
       list(overview = "No significant pathways found to interpret."),
       class = c("interpretation", "list")
     ))
   }
-  
+
   results <- lapply(names(res_list), function(name) {
     item <- res_list[[name]]
     df <- item$df
     original_genes <- item$genes
     fallback_mode <- FALSE
-    
+
     if (nrow(df) == 0) {
       if (!is.null(original_genes) && length(original_genes) > 0) {
         fallback_mode <- TRUE
@@ -622,12 +637,12 @@ interpret_agent <- function(x,
     } else {
       pathway_text <- .format_pathway_text(df)
     }
-    
+
     ppi_text <- .get_ppi_if_requested(add_ppi, df, original_genes, x, fallback_mode)
     fc_text <- .get_fc_text(gene_fold_change, df, original_genes, fallback_mode)
-    
+
     session <- ChatSession$new(model = model)
-    
+
     # --- Agent 1: Cleaner ---
     cleaned_pathways <- pathway_text
     if (!fallback_mode) {
@@ -645,25 +660,28 @@ interpret_agent <- function(x,
         ),
         model = model
       )
-      
+
       cleaner_prompt <- paste0(
         if (!is.null(context)) paste0("Context: ", context, "\n\n") else "",
         "Raw Enriched Pathways:\n", pathway_text
       )
-      
-      cleaner_res <- tryCatch({
-        gen <- generate_object(
-          model = model, prompt = cleaner_prompt,
-          schema = .cleaner_schema(), schema_name = "cleaner_result",
-          system = cleaner$system_prompt,
-          temperature = temperature, max_tokens = max_tokens
-        )
-        gen$object
-      }, error = function(e) {
-        rlang::warn(paste0("Agent Cleaner failed: ", e$message, ". Using unfiltered pathways."))
-        NULL
-      })
-      
+
+      cleaner_res <- tryCatch(
+        {
+          gen <- generate_object(
+            model = model, prompt = cleaner_prompt,
+            schema = .cleaner_schema(), schema_name = "cleaner_result",
+            system = cleaner$system_prompt,
+            temperature = temperature, max_tokens = max_tokens
+          )
+          gen$object
+        },
+        error = function(e) {
+          rlang::warn(paste0("Agent Cleaner failed: ", e$message, ". Using unfiltered pathways."))
+          NULL
+        }
+      )
+
       if (!is.null(cleaner_res) && !is.null(cleaner_res$kept_pathways)) {
         cleaned_pathways <- paste(
           "Selected Relevant Pathways (filtered by Agent Cleaner):",
@@ -674,7 +692,7 @@ interpret_agent <- function(x,
         session$set_memory("cleaner_result", cleaner_res)
       }
     }
-    
+
     # --- Agent 2: Detective ---
     message(sprintf("Processing cluster '%s' with Agent 2: The Detective...", name))
     detective <- Agent$new(
@@ -690,7 +708,7 @@ interpret_agent <- function(x,
       ),
       model = model
     )
-    
+
     detective_prompt <- paste0(
       if (!is.null(context)) paste0("Context: ", context, "\n\n") else "",
       if (fallback_mode) "WARNING: No significant enriched pathways found. Analyzing RAW GENE LISTS.\n\n" else "",
@@ -698,28 +716,31 @@ interpret_agent <- function(x,
       if (!is.null(ppi_text)) paste0("\n\nPPI Network Evidence:\n", ppi_text) else "",
       if (!is.null(fc_text)) paste0("\n\nGene Fold Changes:\n", fc_text) else ""
     )
-    
-    detective_res <- tryCatch({
-      gen <- generate_object(
-        model = model, prompt = detective_prompt,
-        schema = .detective_schema(), schema_name = "detective_result",
-        system = detective$system_prompt,
-        temperature = temperature, max_tokens = max_tokens
-      )
-      gen$object
-    }, error = function(e) {
-      rlang::warn(paste0("Agent Detective failed: ", e$message))
-      NULL
-    })
-    
+
+    detective_res <- tryCatch(
+      {
+        gen <- generate_object(
+          model = model, prompt = detective_prompt,
+          schema = .detective_schema(), schema_name = "detective_result",
+          system = detective$system_prompt,
+          temperature = temperature, max_tokens = max_tokens
+        )
+        gen$object
+      },
+      error = function(e) {
+        rlang::warn(paste0("Agent Detective failed: ", e$message))
+        NULL
+      }
+    )
+
     if (!is.null(detective_res)) {
       session$set_memory("detective_result", detective_res)
     }
-    
+
     # --- Agent 3: Synthesizer ---
     message(sprintf("Processing cluster '%s' with Agent 3: The Storyteller...", name))
     detective_text <- .format_detective_report(detective_res)
-    
+
     synthesizer_prompt <- paste0(
       if (!is.null(context)) paste0("Context: ", context, "\n\n") else "",
       if (fallback_mode) "WARNING: No significant enriched pathways found. Interpret with caution.\n\n" else "",
@@ -727,7 +748,7 @@ interpret_agent <- function(x,
       "1. Relevant Pathways:\n", cleaned_pathways, "\n\n",
       "2. Detective's Report (Drivers & Modules):\n", detective_text
     )
-    
+
     synth_system <- paste0(
       "You are 'Agent Storyteller', a senior scientific writer.\n",
       "Synthesize the findings from previous agents into a coherent biological narrative.\n\n",
@@ -737,20 +758,23 @@ interpret_agent <- function(x,
       "3. Formulate a Hypothesis.\n",
       "4. Draft a Narrative paragraph for a paper."
     )
-    
-    final_res <- tryCatch({
-      gen <- generate_object(
-        model = model, prompt = synthesizer_prompt,
-        schema = .interpretation_schema(), schema_name = "synthesis_result",
-        system = synth_system,
-        temperature = temperature, max_tokens = max_tokens
-      )
-      gen$object
-    }, error = function(e) {
-      rlang::warn(paste0("Agent Synthesizer failed: ", e$message))
-      list(overview = "Agent Synthesizer failed to produce structured output.", confidence = "None")
-    })
-    
+
+    final_res <- tryCatch(
+      {
+        gen <- generate_object(
+          model = model, prompt = synthesizer_prompt,
+          schema = .interpretation_schema(), schema_name = "synthesis_result",
+          system = synth_system,
+          temperature = temperature, max_tokens = max_tokens
+        )
+        gen$object
+      },
+      error = function(e) {
+        rlang::warn(paste0("Agent Synthesizer failed: ", e$message))
+        list(overview = "Agent Synthesizer failed to produce structured output.", confidence = "None")
+      }
+    )
+
     if (is.list(final_res)) {
       final_res$cluster <- name
       if (fallback_mode) final_res$data_source <- "gene_list_only"
@@ -760,13 +784,13 @@ interpret_agent <- function(x,
         final_res$network_evidence <- detective_res$network_evidence
       }
     }
-    
+
     .postprocess_network(final_res)
   })
-  
+
   results <- Filter(Negate(is.null), results)
   names(results) <- vapply(results, function(r) r$cluster %||% "Unknown", character(1))
-  
+
   if (length(results) == 1 && names(results)[1] == "Default") {
     return(results[[1]])
   }
@@ -788,7 +812,7 @@ interpret_agent <- function(x,
 #' @param mapping A named vector mapping sub-cluster IDs to major cluster IDs.
 #' @param model The LLM model in `provider:model` format.
 #' @param task Task type, default "cell_type".
-#' @param max_tokens Maximum tokens. Default 4096.
+#' @param max_tokens Maximum tokens. Default 8192.
 #' @param temperature Sampling temperature. Default 0.3.
 #' @return An `interpretation_list` object.
 #' @export
@@ -797,17 +821,18 @@ interpret_hierarchical <- function(x_minor,
                                    mapping,
                                    model = "deepseek:deepseek-chat",
                                    task = "cell_type",
-                                   max_tokens = 4096,
+                                   max_tokens = 8192,
                                    temperature = 0.3) {
   message("Step 1: Interpreting Major Clusters to establish lineage context...")
   res_major <- interpret(
-    x_major, context = NULL, model = model, task = "cell_type",
+    x_major,
+    context = NULL, model = model, task = "cell_type",
     max_tokens = max_tokens, temperature = temperature
   )
-  
+
   message("Step 2: Interpreting Sub-clusters using hierarchical constraints...")
   res_list_minor <- process_enrichment_input(x_minor, n_pathways = 20)
-  
+
   results <- lapply(names(res_list_minor), function(name) {
     specific_context <- NULL
     if (name %in% names(mapping)) {
@@ -821,19 +846,20 @@ interpret_hierarchical <- function(x_minor,
         )
       }
     }
-    
+
     if (is.null(specific_context)) {
       rlang::warn(paste("No major lineage context found for sub-cluster:", name))
     }
-    
+
     res <- interpret(
-      res_list_minor[[name]], context = specific_context, model = model,
+      res_list_minor[[name]],
+      context = specific_context, model = model,
       task = task, max_tokens = max_tokens, temperature = temperature
     )
     if (is.list(res)) res$cluster <- name
     res
   })
-  
+
   names(results) <- names(res_list_minor)
   class(results) <- c("interpretation_list", "list")
   results
@@ -845,7 +871,7 @@ interpret_hierarchical <- function(x_minor,
 
 .diagnose_failure <- function(finish_reason, raw_text, max_tokens) {
   raw_len <- nchar(raw_text %||% "")
-  
+
   if (finish_reason == "length" && raw_len == 0) {
     return(list(
       message = paste0(
@@ -861,7 +887,7 @@ interpret_hierarchical <- function(x_minor,
       )
     ))
   }
-  
+
   if (finish_reason == "length" && raw_len > 0) {
     return(list(
       message = paste0(
@@ -874,7 +900,7 @@ interpret_hierarchical <- function(x_minor,
       fallback_overview = raw_text
     ))
   }
-  
+
   if (raw_len > 0) {
     return(list(
       message = "Model returned text but it could not be parsed as valid JSON.",
@@ -882,7 +908,7 @@ interpret_hierarchical <- function(x_minor,
       fallback_overview = raw_text
     ))
   }
-  
+
   list(
     message = "Model returned an empty response.",
     suggestion = "Try a different model, or check that your API key has access to this model.",
@@ -891,7 +917,9 @@ interpret_hierarchical <- function(x_minor,
 }
 
 .get_top_genes_text <- function(genes, gene_fold_change) {
-  if (is.null(genes) || length(genes) == 0) return(NULL)
+  if (is.null(genes) || length(genes) == 0) {
+    return(NULL)
+  }
   if (!is.null(gene_fold_change)) {
     common <- intersect(genes, names(gene_fold_change))
     if (length(common) > 0) {
@@ -904,14 +932,22 @@ interpret_hierarchical <- function(x_minor,
 }
 
 .resolve_prior <- function(prior, name) {
-  if (is.null(prior)) return(NULL)
-  if (length(prior) == 1 && is.null(names(prior))) return(prior)
-  if (name %in% names(prior)) return(prior[[name]])
+  if (is.null(prior)) {
+    return(NULL)
+  }
+  if (length(prior) == 1 && is.null(names(prior))) {
+    return(prior)
+  }
+  if (name %in% names(prior)) {
+    return(prior[[name]])
+  }
   NULL
 }
 
 .get_ppi_if_requested <- function(add_ppi, df, genes, x, fallback_mode = FALSE) {
-  if (!add_ppi) return(NULL)
+  if (!add_ppi) {
+    return(NULL)
+  }
   if (fallback_mode) {
     all_genes <- genes
   } else {
@@ -922,7 +958,9 @@ interpret_hierarchical <- function(x_minor,
 }
 
 .get_fc_text <- function(gene_fold_change, df, genes, fallback_mode = FALSE) {
-  if (is.null(gene_fold_change)) return(NULL)
+  if (is.null(gene_fold_change)) {
+    return(NULL)
+  }
   if (fallback_mode) {
     all_genes <- genes
   } else {
@@ -930,7 +968,9 @@ interpret_hierarchical <- function(x_minor,
     if (length(all_genes) == 0 && !is.null(genes)) all_genes <- genes
   }
   common_genes <- intersect(all_genes, names(gene_fold_change))
-  if (length(common_genes) == 0) return(NULL)
+  if (length(common_genes) == 0) {
+    return(NULL)
+  }
   fc_subset <- gene_fold_change[common_genes]
   fc_subset <- fc_subset[order(abs(fc_subset), decreasing = TRUE)]
   top_fc <- utils::head(fc_subset, 20)
@@ -938,7 +978,7 @@ interpret_hierarchical <- function(x_minor,
 }
 
 .call_generate_object <- function(model, task, cluster_id, user_prompt,
-                                  has_prior = FALSE, max_tokens = 4096,
+                                  has_prior = FALSE, max_tokens = 8192,
                                   temperature = 0.3) {
   if (task %in% c("annotation", "cell_type")) {
     sys <- .annotation_system_prompt(cluster_id, has_prior)
@@ -953,95 +993,112 @@ interpret_hierarchical <- function(x_minor,
     schema <- .interpretation_schema()
     schema_name <- "interpretation_result"
   }
-  
+
   debug <- isTRUE(getOption("aisdk.debug", FALSE))
-  
+
   if (debug) {
-    message("[DEBUG] .call_generate_object: model=", model,
-            " task=", task, " cluster=", cluster_id, " max_tokens=", max_tokens)
-  }
-  
-  result <- tryCatch({
-    gen <- generate_object(
-      model = model, prompt = user_prompt, schema = schema,
-      schema_name = schema_name, system = sys,
-      temperature = temperature, max_tokens = max_tokens
+    message(
+      "[DEBUG] .call_generate_object: model=", model,
+      " task=", task, " cluster=", cluster_id, " max_tokens=", max_tokens
     )
-    
-    if (debug) {
-      message("[DEBUG] generate_object result:")
-      message("[DEBUG]   finish_reason: ", gen$finish_reason %||% "NULL")
-      message("[DEBUG]   raw_text length: ", nchar(gen$raw_text %||% ""), " chars")
-      message("[DEBUG]   object is NULL: ", is.null(gen$object))
-      if (!is.null(gen$usage)) {
-        message("[DEBUG]   usage: prompt=", gen$usage$prompt_tokens,
-                " completion=", gen$usage$completion_tokens,
-                " total=", gen$usage$total_tokens)
-      }
-      if (!is.null(gen$raw_text) && nchar(gen$raw_text) > 0) {
-        preview <- substr(gen$raw_text, 1, min(500, nchar(gen$raw_text)))
-        message("[DEBUG]   raw_text preview:\n", preview,
-                if (nchar(gen$raw_text) > 500) "\n... [truncated]" else "")
-      }
-    }
-    
-    if (!is.null(gen$object)) {
-      obj <- gen$object
-      class(obj) <- c("interpretation", class(obj))
-      obj
-    } else {
-      raw <- gen$raw_text %||% ""
-      finish <- gen$finish_reason %||% "unknown"
-      raw_preview <- if (nchar(raw) > 200) paste0(substr(raw, 1, 200), "...") else raw
-      
-      diagnosis <- .diagnose_failure(finish, raw, max_tokens)
-      
-      warn_parts <- c(
-        paste0("generate_object() returned NULL for cluster '", cluster_id, "'."),
-        "i" = paste0("Model: ", model),
-        "i" = paste0("finish_reason: ", finish),
-        "i" = paste0("raw_text (", nchar(raw), " chars): ",
-                     if (nzchar(raw_preview)) raw_preview else "<empty>")
+  }
+
+  result <- tryCatch(
+    {
+      gen <- generate_object(
+        model = model, prompt = user_prompt, schema = schema,
+        schema_name = schema_name, system = sys,
+        temperature = temperature, max_tokens = max_tokens
       )
-      warn_parts <- c(warn_parts, "!" = diagnosis$message)
-      if (!is.null(diagnosis$suggestion)) {
-        warn_parts <- c(warn_parts, ">" = diagnosis$suggestion)
+
+      if (debug) {
+        message("[DEBUG] generate_object result:")
+        message("[DEBUG]   finish_reason: ", gen$finish_reason %||% "NULL")
+        message("[DEBUG]   raw_text length: ", nchar(gen$raw_text %||% ""), " chars")
+        message("[DEBUG]   object is NULL: ", is.null(gen$object))
+        if (!is.null(gen$usage)) {
+          message(
+            "[DEBUG]   usage: prompt=", gen$usage$prompt_tokens,
+            " completion=", gen$usage$completion_tokens,
+            " total=", gen$usage$total_tokens
+          )
+        }
+        if (!is.null(gen$raw_text) && nchar(gen$raw_text) > 0) {
+          preview <- substr(gen$raw_text, 1, min(500, nchar(gen$raw_text)))
+          message(
+            "[DEBUG]   raw_text preview:\n", preview,
+            if (nchar(gen$raw_text) > 500) "\n... [truncated]" else ""
+          )
+        }
       }
-      rlang::warn(warn_parts)
-      
-      fallback_text <- if (nzchar(raw)) raw else diagnosis$fallback_overview
-      list(
-        overview = fallback_text,
-        confidence = "Low",
+
+      if (!is.null(gen$object)) {
+        obj <- gen$object
+        class(obj) <- c("interpretation", class(obj))
+        obj
+      } else {
+        raw <- gen$raw_text %||% ""
+        finish <- gen$finish_reason %||% "unknown"
+        raw_preview <- if (nchar(raw) > 200) paste0(substr(raw, 1, 200), "...") else raw
+
+        diagnosis <- .diagnose_failure(finish, raw, max_tokens)
+
+        warn_parts <- c(
+          paste0("generate_object() returned NULL for cluster '", cluster_id, "'."),
+          "i" = paste0("Model: ", model),
+          "i" = paste0("finish_reason: ", finish),
+          "i" = paste0(
+            "raw_text (", nchar(raw), " chars): ",
+            if (nzchar(raw_preview)) raw_preview else "<empty>"
+          )
+        )
+        warn_parts <- c(warn_parts, "!" = diagnosis$message)
+        if (!is.null(diagnosis$suggestion)) {
+          warn_parts <- c(warn_parts, ">" = diagnosis$suggestion)
+        }
+        rlang::warn(warn_parts)
+
+        fallback_text <- if (nzchar(raw)) raw else diagnosis$fallback_overview
+        list(
+          overview = fallback_text,
+          confidence = "Low",
+          cluster = cluster_id
+        )
+      }
+    },
+    error = function(e) {
+      rlang::warn(c(
+        paste0("LLM call failed for cluster '", cluster_id, "': ", e$message),
+        "i" = paste0("Model: ", model),
+        "i" = "Tip: Re-run with verbose=TRUE for full debug output"
+      ))
+      res <- list(
+        overview = paste0("LLM call failed: ", e$message),
+        confidence = "None",
         cluster = cluster_id
       )
+      class(res) <- c("interpretation", "list")
+      res
     }
-  }, error = function(e) {
-    rlang::warn(c(
-      paste0("LLM call failed for cluster '", cluster_id, "': ", e$message),
-      "i" = paste0("Model: ", model),
-      "i" = "Tip: Re-run with verbose=TRUE for full debug output"
-    ))
-    res <- list(
-      overview = paste0("LLM call failed: ", e$message),
-      confidence = "None",
-      cluster = cluster_id
-    )
-    class(res) <- c("interpretation", "list")
-    res
-  })
-  
+  )
+
   result
 }
 
 .format_detective_report <- function(detective_res) {
-  if (is.null(detective_res) || !is.list(detective_res)) return("No detective report available.")
+  if (is.null(detective_res) || !is.list(detective_res)) {
+    return("No detective report available.")
+  }
   key_drivers <- if (!is.null(detective_res$key_drivers)) {
     paste(detective_res$key_drivers, collapse = ", ")
-  } else "None identified"
+  } else {
+    "None identified"
+  }
   modules <- if (!is.null(detective_res$functional_modules)) {
     paste(detective_res$functional_modules, collapse = ", ")
-  } else "None identified"
+  } else {
+    "None identified"
+  }
   evidence <- detective_res$network_evidence %||% "None provided"
   paste0(
     "Key Drivers: ", key_drivers, "\n",
@@ -1056,16 +1113,19 @@ interpret_hierarchical <- function(x_minor,
     return(res)
   }
   rn <- res$refined_network
-  rn_df <- tryCatch({
-    if (is.data.frame(rn)) {
-      rn
-    } else if (is.list(rn) && length(rn) > 0 && all(vapply(rn, is.list, logical(1)))) {
-      do.call(rbind, lapply(rn, function(r) as.data.frame(r, stringsAsFactors = FALSE)))
-    } else {
-      NULL
-    }
-  }, error = function(e) NULL)
-  
+  rn_df <- tryCatch(
+    {
+      if (is.data.frame(rn)) {
+        rn
+      } else if (is.list(rn) && length(rn) > 0 && all(vapply(rn, is.list, logical(1)))) {
+        do.call(rbind, lapply(rn, function(r) as.data.frame(r, stringsAsFactors = FALSE)))
+      } else {
+        NULL
+      }
+    },
+    error = function(e) NULL
+  )
+
   if (!is.null(rn_df) && nrow(rn_df) > 0) {
     colnames(rn_df)[colnames(rn_df) == "source"] <- "from"
     colnames(rn_df)[colnames(rn_df) == "target"] <- "to"
@@ -1084,8 +1144,12 @@ interpret_hierarchical <- function(x_minor,
     return(res_major[[major_id]])
   }
   if (inherits(res_major, "interpretation")) {
-    if (!is.null(res_major$cluster) && res_major$cluster == major_id) return(res_major)
-    if (is.null(res_major$cluster)) return(res_major)
+    if (!is.null(res_major$cluster) && res_major$cluster == major_id) {
+      return(res_major)
+    }
+    if (is.null(res_major$cluster)) {
+      return(res_major)
+    }
   }
   NULL
 }
@@ -1111,7 +1175,7 @@ print.interpretation <- function(x, ...) {
     cat("\n")
     return(invisible(x))
   }
-  
+
   if (!is.null(x$phenotype)) {
     cat("## Phenotype Characterization\n\n")
     if (!is.null(x$cluster)) cat(sprintf("### Group/Cluster: %s\n\n", x$cluster))
@@ -1125,15 +1189,15 @@ print.interpretation <- function(x, ...) {
     cat("\n")
     return(invisible(x))
   }
-  
+
   cat("## Interpretation Result\n\n")
   if (!is.null(x$cluster)) cat(sprintf("### Cluster: %s\n\n", x$cluster))
-  
+
   if (!is.null(x$overview)) {
     cat("### 1. Overview\n")
     cat(x$overview, "\n\n")
   }
-  
+
   if (!is.null(x$regulatory_drivers)) {
     cat("### 2. Regulatory Drivers\n")
     drivers <- unlist(x$regulatory_drivers)
@@ -1143,7 +1207,7 @@ print.interpretation <- function(x, ...) {
       cat(drivers, "\n\n")
     }
   }
-  
+
   if (!is.null(x$key_mechanisms)) {
     cat("### 3. Key Mechanisms\n")
     if (is.list(x$key_mechanisms) && !is.null(names(x$key_mechanisms))) {
@@ -1156,8 +1220,10 @@ print.interpretation <- function(x, ...) {
             cat("**Pathways:** ", paste(mechanism$pathways, collapse = ", "), "\n")
           }
           if (!is.null(mechanism$genes)) {
-            cat("**Key Genes:** ", paste(utils::head(mechanism$genes, 10), collapse = ", "),
-                if (length(mechanism$genes) > 10) "..." else "", "\n")
+            cat(
+              "**Key Genes:** ", paste(utils::head(mechanism$genes, 10), collapse = ", "),
+              if (length(mechanism$genes) > 10) "..." else "", "\n"
+            )
           }
         } else {
           cat(mechanism, "\n")
@@ -1168,12 +1234,12 @@ print.interpretation <- function(x, ...) {
       cat(as.character(x$key_mechanisms), "\n\n")
     }
   }
-  
+
   if (!is.null(x$crosstalk)) {
     cat("### 4. Crosstalk & Interactions\n")
     cat(x$crosstalk, "\n\n")
   }
-  
+
   if (!is.null(x$hypothesis)) {
     cat("### 5. Hypothesis\n")
     if (is.list(x$hypothesis)) {
@@ -1183,12 +1249,12 @@ print.interpretation <- function(x, ...) {
       cat(x$hypothesis, "\n\n")
     }
   }
-  
+
   if (!is.null(x$narrative)) {
     cat("### 6. Narrative Draft\n")
     cat(x$narrative, "\n\n")
   }
-  
+
   if (!is.null(x$network) && requireNamespace("igraph", quietly = TRUE) && inherits(x$network, "igraph")) {
     cat("### 7. Refined Regulatory Network\n")
     el <- igraph::as_data_frame(x$network, what = "edges")
@@ -1206,7 +1272,7 @@ print.interpretation <- function(x, ...) {
       cat(x$network_evidence, "\n\n")
     }
   }
-  
+
   invisible(x)
 }
 

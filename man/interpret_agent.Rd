@@ -2,49 +2,57 @@
 % Please edit documentation in R/interpret.R
 \name{interpret_agent}
 \alias{interpret_agent}
-\title{interpret_agent}
+\title{Interpret enrichment results using a multi-agent pipeline (Deep Mode)}
 \usage{
 interpret_agent(
   x,
   context = NULL,
   n_pathways = 50,
-  model = "deepseek-chat",
-  provider = NULL,
-  api_key = NULL,
+  model = "deepseek:deepseek-chat",
   add_ppi = FALSE,
-  gene_fold_change = NULL
+  gene_fold_change = NULL,
+  max_tokens = 4096,
+  temperature = 0.3,
+  verbose = FALSE
 )
 }
 \arguments{
-\item{x}{An enrichment result object (e.g., `enrichResult` or `gseaResult`).}
+\item{x}{An enrichment result object.}
 
 \item{context}{A string describing the experimental background.}
 
-\item{n_pathways}{Number of top pathways to consider initially. Default is 50 (Agent 1 will filter them).}
+\item{n_pathways}{Number of top pathways to consider initially. Default 50.}
 
-\item{model}{The LLM model to use.}
+\item{model}{The LLM model in `provider:model` format.}
 
-\item{provider}{The LLM provider. Default is NULL (inferred from model or handled by aisdk).}
+\item{add_ppi}{Logical, whether to query PPI data. Default FALSE.}
 
-\item{api_key}{The API key for the LLM.}
+\item{gene_fold_change}{Named numeric vector of log fold changes.}
 
-\item{add_ppi}{Boolean, whether to use PPI network integration.}
+\item{max_tokens}{Maximum tokens per agent call. Default 4096.}
 
-\item{gene_fold_change}{Named vector of logFC for expression context.}
+\item{temperature}{Sampling temperature. Default 0.3.}
 }
 \value{
-A detailed interpretation list.
+An `interpretation` object with deep analysis fields plus
+  regulatory_drivers, refined_network, and network_evidence from the
+  detective agent.
 }
 \description{
-Interpret enrichment results using a multi-agent system (Deep Mode)
+Employs three specialized AI agents in sequence for rigorous interpretation:
+\enumerate{
+  \item Agent Cleaner: Filters noise and selects relevant pathways.
+  \item Agent Detective: Identifies key regulators and functional modules.
+  \item Agent Synthesizer: Produces a coherent biological narrative.
+}
 }
 \details{
-This function employs a multi-agent strategy to provide a more rigorous and comprehensive
-biological interpretation. It breaks down the task into three specialized agents:
-1. Agent Cleaner: Filters noise and selects relevant pathways.
-2. Agent Detective: Identifies key regulators and functional modules using PPI/TF data.
-3. Agent Synthesizer: Synthesizes findings into a coherent narrative.
+Uses aisdk's Agent and Session system for shared context across agents.
 }
-\author{
-Guangchuang Yu
+\examples{
+\dontrun{
+res <- interpret_agent(df, model = "openai:gpt-4o",
+                       context = "scRNA-seq of mouse MI day 3")
+print(res)
+}
 }
