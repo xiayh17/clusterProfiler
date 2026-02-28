@@ -32,6 +32,8 @@ interpret_agent(
 \item{max_tokens}{Maximum tokens per agent call. Default 8192.}
 
 \item{temperature}{Sampling temperature. Default 0.3.}
+
+\item{verbose}{Logical, whether to print debug messages. Default FALSE.}
 }
 \value{
 An `interpretation` object with deep analysis fields plus

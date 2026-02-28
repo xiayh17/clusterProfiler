@@ -12,7 +12,7 @@ NULL
 # ============================================================================
 # Schema Definitions
 # ============================================================================
-#' @importFrom aisdk generate_object z_object z_string z_array z_enum
+#' @importFrom aisdk generate_object z_object z_string z_array z_enum ChatSession Agent
 .interpretation_schema <- function() {
   z_object(
     overview = z_string("High-level summary of the key biological processes identified"),
@@ -576,6 +576,7 @@ interpret <- function(x,
 #' @param gene_fold_change Named numeric vector of log fold changes.
 #' @param max_tokens Maximum tokens per agent call. Default 8192.
 #' @param temperature Sampling temperature. Default 0.3.
+#' @param verbose Logical, whether to print debug messages. Default FALSE.
 #' @return An `interpretation` object with deep analysis fields plus
 #'   regulatory_drivers, refined_network, and network_evidence from the
 #'   detective agent.
