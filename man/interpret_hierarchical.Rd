@@ -10,7 +10,7 @@ interpret_hierarchical(
   mapping,
   model = "deepseek:deepseek-chat",
   task = "cell_type",
-  max_tokens = 4096,
+  max_tokens = 8192,
   temperature = 0.3
 )
 }
@@ -25,7 +25,7 @@ interpret_hierarchical(
 
 \item{task}{Task type, default "cell_type".}
 
-\item{max_tokens}{Maximum tokens. Default 4096.}
+\item{max_tokens}{Maximum tokens. Default 8192.}
 
 \item{temperature}{Sampling temperature. Default 0.3.}
 }

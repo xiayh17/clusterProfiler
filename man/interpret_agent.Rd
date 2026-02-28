@@ -11,7 +11,7 @@ interpret_agent(
   model = "deepseek:deepseek-chat",
   add_ppi = FALSE,
   gene_fold_change = NULL,
-  max_tokens = 4096,
+  max_tokens = 8192,
   temperature = 0.3,
   verbose = FALSE
 )
@@ -29,7 +29,7 @@ interpret_agent(
 
 \item{gene_fold_change}{Named numeric vector of log fold changes.}
 
-\item{max_tokens}{Maximum tokens per agent call. Default 4096.}
+\item{max_tokens}{Maximum tokens per agent call. Default 8192.}
 
 \item{temperature}{Sampling temperature. Default 0.3.}
 }
@@ -51,8 +51,10 @@ Uses aisdk's Agent and Session system for shared context across agents.
 }
 \examples{
 \dontrun{
-res <- interpret_agent(df, model = "openai:gpt-4o",
-                       context = "scRNA-seq of mouse MI day 3")
+res <- interpret_agent(df,
+  model = "openai:gpt-4o",
+  context = "scRNA-seq of mouse MI day 3"
+)
 print(res)
 }
 }

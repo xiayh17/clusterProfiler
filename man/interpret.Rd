@@ -82,8 +82,10 @@ df <- data.frame(
   p.adjust = c(0.01, 0.02),
   geneID = c("TP53/BAX", "MYC/CCND1/CDK4")
 )
-res <- interpret(df, model = "deepseek:deepseek-chat",
-                 context = "Cancer proliferation study")
+res <- interpret(df,
+  model = "deepseek:deepseek-chat",
+  context = "Cancer proliferation study"
+)
 print(res)
 }
 }

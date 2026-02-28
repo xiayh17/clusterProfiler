@@ -39,13 +39,13 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
-  \item{GOSemSim}{\code{\link[GOSemSim]{buildGOmap}}, \code{\link[GOSemSim]{get_organism}}, \code{\link[GOSemSim]{read.blast2go}}, \code{\link[GOSemSim:read-gaf]{read.gaf}}}
-
   \item{dplyr}{\code{\link[dplyr]{arrange}}, \code{\link[dplyr]{filter}}, \code{\link[dplyr]{group_by}}, \code{\link[dplyr]{mutate}}, \code{\link[dplyr:context]{n}}, \code{\link[dplyr]{rename}}, \code{\link[dplyr]{select}}, \code{\link[dplyr]{slice}}, \code{\link[dplyr]{summarise}}}
 
   \item{enrichit}{\code{\link[enrichit]{geneID}}, \code{\link[enrichit]{geneInCategory}}, \code{\link[enrichit]{gsfilter}}, \code{\link[enrichit]{setReadable}}}
 
   \item{enrichplot}{\code{\link[enrichplot:reexports]{cnetplot}}, \code{\link[enrichplot]{dotplot}}, \code{\link[enrichplot]{emapplot}}, \code{\link[enrichplot]{goplot}}, \code{\link[enrichplot]{gseaplot}}, \code{\link[enrichplot]{heatplot}}, \code{\link[enrichplot]{ridgeplot}}}
+
+  \item{GOSemSim}{\code{\link[GOSemSim]{buildGOmap}}, \code{\link[GOSemSim]{get_organism}}, \code{\link[GOSemSim]{read.blast2go}}, \code{\link[GOSemSim:read-gaf]{read.gaf}}}
 
   \item{gson}{\code{\link[gson:read-gmt]{read.gmt}}, \code{\link[gson:read-gmt]{read.gmt.wp}}}
 
