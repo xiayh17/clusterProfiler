@@ -9,6 +9,7 @@ interpret_agent(
   context = NULL,
   n_pathways = 50,
   model = "deepseek-chat",
+  provider = NULL,
   api_key = NULL,
   add_ppi = FALSE,
   gene_fold_change = NULL
@@ -22,6 +23,8 @@ interpret_agent(
 \item{n_pathways}{Number of top pathways to consider initially. Default is 50 (Agent 1 will filter them).}
 
 \item{model}{The LLM model to use.}
+
+\item{provider}{The LLM provider. Default is NULL (inferred from model or handled by aisdk).}
 
 \item{api_key}{The API key for the LLM.}
 

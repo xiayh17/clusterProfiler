@@ -9,6 +9,7 @@ interpret_hierarchical(
   x_major,
   mapping,
   model = "deepseek-chat",
+  provider = NULL,
   api_key = NULL,
   task = "cell_type"
 )

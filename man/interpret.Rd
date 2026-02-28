@@ -9,6 +9,7 @@ interpret(
   context = NULL,
   n_pathways = 20,
   model = "deepseek-chat",
+  provider = NULL,
   api_key = NULL,
   task = "interpretation",
   prior = NULL,
@@ -24,6 +25,8 @@ interpret(
 \item{n_pathways}{Number of top significant pathways to include in the analysis. Default is 20.}
 
 \item{model}{The LLM model to use. Default is "deepseek-chat". Supported models include "deepseek-chat", "glm-4", "qwen-turbo" etc.}
+
+\item{provider}{The LLM provider. Default is NULL (inferred from model or handled by aisdk).}
 
 \item{api_key}{The API key for the LLM. If NULL, it tries to fetch from `getOption('yulab_translate')` based on the model.}
 
@@ -42,8 +45,8 @@ A character string containing the LLM-generated interpretation.
 Interpret enrichment results using Large Language Models (LLM)
 }
 \details{
-This function sends the enrichment results (top significant pathways) along with 
-an optional experimental context to an LLM (e.g., DeepSeek) to generate 
+This function sends the enrichment results (top significant pathways) along with
+an optional experimental context to an LLM (e.g., DeepSeek) to generate
 a biological interpretation, hypothesis, and narrative suitable for a paper.
 }
 \author{
