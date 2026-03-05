@@ -37,7 +37,8 @@ removeEmptyEntry.list <- function(x) {
     x[notNA.idx]
 }
 
-globalVariables(".")
+
+globalVariables(c(".", "name"))
 
 #' @importFrom GOSemSim get_organism
 #' @export
