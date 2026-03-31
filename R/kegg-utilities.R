@@ -223,7 +223,7 @@ kegg_list <- function(db, species = NULL) {
 #' @export
 #' @author guangchuang yu
 ko2name <- function(ko) {
-    ko <- unique(na.omit(as.character(ko)))
+    ko <- unique(stats::na.omit(as.character(ko)))
     res <- lapply(ko, function(k) {
         url <- paste0("https://rest.kegg.jp/get/", k)
         content <- tryCatch(yulab.utils::yread(url), error = function(e) character())
