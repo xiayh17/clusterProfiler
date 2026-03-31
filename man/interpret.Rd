@@ -8,7 +8,7 @@ interpret(
   x,
   context = NULL,
   n_pathways = 20,
-  model = "deepseek:deepseek-chat",
+  model = NULL,
   task = "interpretation",
   prior = NULL,
   add_ppi = FALSE,
@@ -27,9 +27,12 @@ interpret(
 
 \item{n_pathways}{Number of top significant pathways to include. Default 20.}
 
-\item{model}{The LLM model in `provider:model` format
-(e.g., "deepseek:deepseek-chat", "gemini:gemini-2.5-flash").
-Bare model names are supported with a warning (e.g., "deepseek-chat").}
+\item{model}{Optional LLM model. When `NULL` (default), uses the aisdk
+package-wide default model configured via `aisdk::set_model()`.
+You can also supply a model ID in `provider:model` format
+(e.g., `"deepseek:deepseek-chat"`, `"gemini:gemini-2.5-flash"`) or a
+`LanguageModelV1` object. Bare model names are supported with a warning
+(e.g., `"deepseek-chat"`).}
 
 \item{task}{Task type: "interpretation" (default), "cell_type"/"annotation",
 or "phenotype"/"phenotyping".}
@@ -86,6 +89,9 @@ res <- interpret(df,
   model = "deepseek:deepseek-chat",
   context = "Cancer proliferation study"
 )
+# Reuse aisdk's global default model
+# aisdk::set_model("openai:gpt-4o-mini")
+# res <- interpret(df, context = "Cancer proliferation study")
 print(res)
 }
 }

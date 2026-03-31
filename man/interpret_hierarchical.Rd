@@ -8,7 +8,7 @@ interpret_hierarchical(
   x_minor,
   x_major,
   mapping,
-  model = "deepseek:deepseek-chat",
+  model = NULL,
   task = "cell_type",
   max_tokens = 8192,
   temperature = 0.3
@@ -21,7 +21,10 @@ interpret_hierarchical(
 
 \item{mapping}{A named vector mapping sub-cluster IDs to major cluster IDs.}
 
-\item{model}{The LLM model in `provider:model` format.}
+\item{model}{Optional LLM model. When `NULL` (default), uses the aisdk
+package-wide default model configured via `aisdk::set_model()`. You can
+also supply a model ID in `provider:model` format or a `LanguageModelV1`
+object. Bare model names are supported with a warning.}
 
 \item{task}{Task type, default "cell_type".}
 

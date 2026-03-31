@@ -166,6 +166,10 @@ NULL
 #' @return A string in `provider:model` format.
 #' @keywords internal
 infer_model_id <- function(model) {
+  if (!is.character(model) || length(model) != 1 || !nzchar(model)) {
+    rlang::abort("`model` must be a non-empty model ID string.")
+  }
+
   if (grepl(":", model, fixed = TRUE)) {
     return(model)
   }
@@ -206,6 +210,15 @@ infer_model_id <- function(model) {
     "i" = paste0("Use: model = '", full_id, "'")
   ))
   full_id
+}
+
+#' @keywords internal
+.normalize_interpret_model <- function(model = NULL) {
+  if (is.null(model) || inherits(model, "LanguageModelV1")) {
+    return(model)
+  }
+
+  infer_model_id(model)
 }
 
 # ============================================================================
@@ -433,9 +446,12 @@ process_enrichment_input <- function(x, n_pathways) {
 #' @param context A string describing the experimental background
 #'   (e.g., "scRNA-seq of mouse myocardial infarction at day 3").
 #' @param n_pathways Number of top significant pathways to include. Default 20.
-#' @param model The LLM model in `provider:model` format
-#'   (e.g., "deepseek:deepseek-chat", "gemini:gemini-2.5-flash").
-#'   Bare model names are supported with a warning (e.g., "deepseek-chat").
+#' @param model Optional LLM model. When `NULL` (default), uses the aisdk
+#'   package-wide default model configured via `aisdk::set_model()`.
+#'   You can also supply a model ID in `provider:model` format
+#'   (e.g., `"deepseek:deepseek-chat"`, `"gemini:gemini-2.5-flash"`) or a
+#'   `LanguageModelV1` object. Bare model names are supported with a warning
+#'   (e.g., `"deepseek-chat"`).
 #' @param task Task type: "interpretation" (default), "cell_type"/"annotation",
 #'   or "phenotype"/"phenotyping".
 #' @param prior Optional prior knowledge or preliminary annotation to guide the task.
@@ -467,12 +483,15 @@ process_enrichment_input <- function(x, n_pathways) {
 #'   model = "deepseek:deepseek-chat",
 #'   context = "Cancer proliferation study"
 #' )
+#' # Reuse aisdk's global default model
+#' # aisdk::set_model("openai:gpt-4o-mini")
+#' # res <- interpret(df, context = "Cancer proliferation study")
 #' print(res)
 #' }
 interpret <- function(x,
                       context = NULL,
                       n_pathways = 20,
-                      model = "deepseek:deepseek-chat",
+                      model = NULL,
                       task = "interpretation",
                       prior = NULL,
                       add_ppi = FALSE,
@@ -488,7 +507,7 @@ interpret <- function(x,
     on.exit(options(aisdk.debug = old_debug), add = TRUE)
   }
 
-  model <- infer_model_id(model)
+  model <- .normalize_interpret_model(model)
   res_list <- process_enrichment_input(x, n_pathways)
 
   if (length(res_list) == 0) {
@@ -571,7 +590,10 @@ interpret <- function(x,
 #' @param x An enrichment result object.
 #' @param context A string describing the experimental background.
 #' @param n_pathways Number of top pathways to consider initially. Default 50.
-#' @param model The LLM model in `provider:model` format.
+#' @param model Optional LLM model. When `NULL` (default), uses the aisdk
+#'   package-wide default model configured via `aisdk::set_model()`. You can
+#'   also supply a model ID in `provider:model` format or a `LanguageModelV1`
+#'   object. Bare model names are supported with a warning.
 #' @param add_ppi Logical, whether to query PPI data. Default FALSE.
 #' @param gene_fold_change Named numeric vector of log fold changes.
 #' @param max_tokens Maximum tokens per agent call. Default 8192.
@@ -592,7 +614,7 @@ interpret <- function(x,
 interpret_agent <- function(x,
                             context = NULL,
                             n_pathways = 50,
-                            model = "deepseek:deepseek-chat",
+                            model = NULL,
                             add_ppi = FALSE,
                             gene_fold_change = NULL,
                             max_tokens = 8192,
@@ -606,7 +628,7 @@ interpret_agent <- function(x,
     on.exit(options(aisdk.debug = old_debug), add = TRUE)
   }
 
-  model <- infer_model_id(model)
+  model <- .normalize_interpret_model(model)
   res_list <- process_enrichment_input(x, n_pathways)
 
   if (length(res_list) == 0) {
@@ -811,7 +833,10 @@ interpret_agent <- function(x,
 #' @param x_minor Enrichment result for sub-clusters.
 #' @param x_major Enrichment result for major clusters.
 #' @param mapping A named vector mapping sub-cluster IDs to major cluster IDs.
-#' @param model The LLM model in `provider:model` format.
+#' @param model Optional LLM model. When `NULL` (default), uses the aisdk
+#'   package-wide default model configured via `aisdk::set_model()`. You can
+#'   also supply a model ID in `provider:model` format or a `LanguageModelV1`
+#'   object. Bare model names are supported with a warning.
 #' @param task Task type, default "cell_type".
 #' @param max_tokens Maximum tokens. Default 8192.
 #' @param temperature Sampling temperature. Default 0.3.
@@ -820,10 +845,12 @@ interpret_agent <- function(x,
 interpret_hierarchical <- function(x_minor,
                                    x_major,
                                    mapping,
-                                   model = "deepseek:deepseek-chat",
+                                   model = NULL,
                                    task = "cell_type",
                                    max_tokens = 8192,
                                    temperature = 0.3) {
+  model <- .normalize_interpret_model(model)
+
   message("Step 1: Interpreting Major Clusters to establish lineage context...")
   res_major <- interpret(
     x_major,
